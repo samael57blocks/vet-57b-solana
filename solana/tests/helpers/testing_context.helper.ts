@@ -1,6 +1,7 @@
-import { AnchorProvider, EventParser, Program, Provider } from "@coral-xyz/anchor";
-import { Connection, Keypair, LAMPORTS_PER_SOL } from "@solana/web3.js";
+import { AnchorProvider, Program, Provider } from "@coral-xyz/anchor";
+import { Connection, Keypair, LAMPORTS_PER_SOL, PublicKey } from "@solana/web3.js";
 import { Vet57b } from "../../target/types/vet_57b";
+import * as idl from "../../target/idl/vet_57b.json";
 
 /**
  * Defines the environment for testing proving helper functions to create and track the program entities.
@@ -23,8 +24,8 @@ export class TestingContext {
     // Create a connection to the Solana node
     this.connection = this.provider.connection;
 
-    // Load the 57B Veterinary program
-    this.program = anchor.workspace.Vet57b;
+    // Load the 57B Veterinary program from the IDL
+    this.program = new Program<Vet57b>(idl as any, this.provider);
     // Create a default signer to send operations
     this.defaultSigner = TestingContext.newKeypair();
   }
@@ -53,7 +54,13 @@ export class TestingContext {
   async sendAirdrop(accounts: Keypair[], amount: number = 5): Promise<void> {
     // Iterate over the accounts and send the airdrop
     for (const account of accounts) {
-      await this.connection.requestAirdrop(account.publicKey, amount * LAMPORTS_PER_SOL);
+      const signature = await this.connection.requestAirdrop(account.publicKey, amount * LAMPORTS_PER_SOL);
+      // Wait for the airdrop to be confirmed
+      const lastBlockHash = await this.connection.getLatestBlockhash();
+      await this.connection.confirmTransaction({
+        signature,
+        ...lastBlockHash,
+      }, 'confirmed');
     }
   }
 
@@ -88,7 +95,7 @@ export class TestingContext {
   async getEvent<T>(txSignature: string, eventIndex: number = 0): Promise<T | undefined> {
     // Get the transaction information
     const tx = await this.connection.getTransaction(txSignature, {
-      commitment: 'finalized',
+      commitment: 'confirmed',
       maxSupportedTransactionVersion: 0,
     });
 
@@ -98,14 +105,28 @@ export class TestingContext {
       return undefined;
     }
 
-    // Create the event parser
-    const eventParser = new EventParser(this.program.programId, this.program.coder);
-    // Parse the events
-    const parsedEvents = eventParser.parseLogs(transactionLogs);
+    // Decode the event directly from the logs
+    const programDataPrefix = 'Program data: ';
+    const eventLogs = transactionLogs
+      .filter(log => log.startsWith(programDataPrefix))
+      .map(log => log.slice(programDataPrefix.length));
 
-    for (let i = 0; i < eventIndex; i++) {
-      parsedEvents.next();
+    if (eventIndex >= eventLogs.length) {
+      return undefined;
     }
-    return (parsedEvents.next().value as any)?.data as T | undefined;
+
+    const decoded = this.program.coder.events.decode(eventLogs[eventIndex]);
+    return decoded?.data as T | undefined;
+  }
+
+  /**
+   * Derives the address of a medical record PDA from its id.
+   */
+  static deriveMedicalRecordAddress(id: PublicKey, programId: PublicKey): PublicKey {
+    const [address] = PublicKey.findProgramAddressSync(
+      [Buffer.from("medical-record"), id.toBuffer()],
+      programId
+    );
+    return address;
   }
 }

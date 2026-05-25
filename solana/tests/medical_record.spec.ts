@@ -1,4 +1,5 @@
 import { Program } from "@coral-xyz/anchor";
+import { PublicKey, SystemProgram } from "@solana/web3.js";
 import { Vet57b } from "../target/types/vet_57b";
 import { TestingContext } from "./helpers/testing_context.helper";
 import { givenNewMedicalRecord } from "./helpers/data_mothers";
@@ -29,7 +30,9 @@ describe('Medical record', () => {
 
       // Invoke the instruction to register the new pet
       const tx = await vetProgram.methods.registerPet(newMedicalRecord).accounts({
-
+        medicalRecord: MedicalRecord.deriveAddress(newMedicalRecord.id, vetProgram.programId),
+        authority: testingContext.defaultSigner.publicKey,
+        systemProgram: SystemProgram.programId,
       }).signers([testingContext.defaultSigner]).rpc();
       // Wait for the transaction to be confirmed
       await testingContext.waitForTransactions(tx);
@@ -44,17 +47,17 @@ describe('Medical record', () => {
       expect(medicalRecord.id.toBase58()).equals(newMedicalRecord.id.toBase58());
       expect(medicalRecord.name).equals(newMedicalRecord.name);
       expect(medicalRecord.age).equals(newMedicalRecord.age);
-      expect(medicalRecord.animalType).equals(newMedicalRecord.animalType);
+      expect(medicalRecord.animalType).to.deep.equal(newMedicalRecord.animalType);
 
       // Get the event from the transaction
       const event = await testingContext.getEvent<MedicalRecordCreatedEvent>(tx);
       // Assert that the event is not null
       expect(event).not.to.be.null;
       // Assert that the event has the correct information
-      expect(event.id).equals(newMedicalRecord.id.toBase58());
+      expect(event.id.toBase58()).equals(newMedicalRecord.id.toBase58());
       expect(event.name).equals(newMedicalRecord.name);
       expect(event.age).equals(newMedicalRecord.age);
-      expect(event.animalType).equals(newMedicalRecord.animalType);
+      expect(event.animalType).to.deep.equal(newMedicalRecord.animalType);
       expect(event.caretakerName).equals(newMedicalRecord.caretakerName);
       expect(event.caretakerPhone).equals(newMedicalRecord.caretakerPhone);
     });

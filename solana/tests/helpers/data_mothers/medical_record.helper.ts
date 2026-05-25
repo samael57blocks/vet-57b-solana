@@ -1,4 +1,4 @@
-import { AnimalType, NewMedicalRecord } from "../../../app/models";
+import { ANIMAL_DOG, NewMedicalRecord } from "../../../app/models";
 import { Keypair, PublicKey } from "@solana/web3.js";
 
 /**
@@ -12,7 +12,7 @@ export function givenNewMedicalRecord(data?: Partial<NewMedicalRecord>): NewMedi
         id: Keypair.generate().publicKey,
         name: 'Boby',
         age: 5,
-        animalType: AnimalType.DOG,
+        animalType: ANIMAL_DOG,
         caretakerName: 'John Doe',
         caretakerPhone: '+56912345678',
     };

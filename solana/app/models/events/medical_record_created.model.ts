@@ -1,3 +1,4 @@
+import { PublicKey } from "@solana/web3.js";
 import { AnimalType } from "../medical_record.model";
 
 /**
@@ -6,7 +7,7 @@ import { AnimalType } from "../medical_record.model";
  */
 export interface MedicalRecordCreatedEvent {
     /** The ID of the medical record */
-    id: string;
+    id: PublicKey;
     /** The name of the patient */
     name: string;
     /** The age of the patient */
