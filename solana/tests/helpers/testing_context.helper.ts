@@ -1,4 +1,4 @@
-import { AnchorProvider, Program, Provider } from "@coral-xyz/anchor";
+import { AnchorProvider, Program, Provider, Wallet } from "@coral-xyz/anchor";
 import { Connection, Keypair, LAMPORTS_PER_SOL, PublicKey } from "@solana/web3.js";
 import { Vet57b } from "../../target/types/vet_57b";
 import * as idl from "../../target/idl/vet_57b.json";
@@ -19,15 +19,21 @@ export class TestingContext {
   readonly defaultSigner: Keypair;
 
   constructor() {
-    // Create a local provider to send transactions
-    this.provider = AnchorProvider.local();
-    // Create a connection to the Solana node
-    this.connection = this.provider.connection;
+    // Create an ephemeral keypair for the test wallet (no ANCHOR_WALLET needed)
+    const walletKeypair = TestingContext.newKeypair();
+    this.defaultSigner = walletKeypair;
+    // Create a local connection
+    this.connection = new Connection("http://127.0.0.1:8899", "confirmed");
+    // Create the provider with the ephemeral wallet instead of reading from filesystem
+    this.provider = new AnchorProvider(
+      this.connection,
+      new Wallet(walletKeypair),
+      AnchorProvider.defaultOptions(),
+    );
 
     // Load the 57B Veterinary program from the IDL
     this.program = new Program<Vet57b>(idl as any, this.provider);
-    // Create a default signer to send operations
-    this.defaultSigner = TestingContext.newKeypair();
+    // defaultSigner is set above (walletKeypair) — same as the provider wallet
   }
 
   /**
