@@ -37,16 +37,16 @@ Chain strategy: pending
 
 - [x] 2.1 Fix `AnimalType` enum keys in `medical_record.model.ts` to match Anchor IDL variant names — use lowercase `dog`/`cat` keys as Anchor 0.32.x `convertIdlToCamelCase` lowercases variant names
 - [x] 2.2 Implement `MedicalRecord.deriveAddress()` via `findProgramAddressSync([b"medical-record", id])`
-- [ ] 2.3 Implement `MedicalAppointment.deriveAddress()` via `findProgramAddressSync([b"medical-appointment", id])`
-- [ ] 2.4 Create `pet_checkin.model.ts` with `PetCheckin` interface + `deriveAddress([b"pet-checkin", medical_record, id])`
-- [ ] 2.5 Create `vet.program.ts` with typed `Program<Vet57b>` wrapper exposing methods for all 4 instructions
+- [x] 2.3 Implement `MedicalAppointment.deriveAddress()` via `findProgramAddressSync([b"medical-appointment", id])`
+- [x] 2.4 Create `pet_checkin.model.ts` with `PetCheckin` interface + `deriveAddress([b"pet-checkin", medical_record, id])`
+- [x] 2.5 Create `vet.program.ts` with typed `Program<Vet57b>` wrapper exposing methods for all 4 instructions
 
 ## Phase 3: Test Helpers
 
 - [x] 3.1 Fix `testing_context.helper.ts`: replace `anchor.workspace.Vet57b` with `import * as anchor from "@coral-xyz/anchor"` + program init via `AnchorProvider.local()`; also fixed airdrop confirmation
-- [ ] 3.2 Add `medical_appointment.helper.ts` data mother (`givenNewMedicalAppointment`)
-- [ ] 3.3 Add `pet_checkin.helper.ts` data mother (`givenNewPetCheckin`)
-- [ ] 3.4 Update `data_mothers/index.ts` to export both new helpers
+- [x] 3.2 Add `medical_appointment.helper.ts` data mother (`givenNewMedicalAppointment`)
+- [x] 3.3 Add `pet_checkin.helper.ts` data mother (`givenNewPetCheckin`)
+- [x] 3.4 Update `data_mothers/index.ts` to export both new helpers
 
 ## Phase 4: Test Suites
 
