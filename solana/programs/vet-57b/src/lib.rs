@@ -34,16 +34,8 @@ pub enum AnimalType {
 
 #[error_code]
 pub enum Vet57bError {
-    #[msg("A pet with this ID is already registered")]
-    PetAlreadyRegistered,
-    #[msg("An appointment with this ID already exists for this medical record")]
-    AppointmentAlreadyExists,
     #[msg("The payment amount exceeds the appointment cost")]
     PaymentExceedsCost,
-    #[msg("A check-in with this ID already exists for this medical record")]
-    CheckinAlreadyExists,
-    #[msg("The specified medical record was not found")]
-    MedicalRecordNotFound,
 }
 
 // ---------------------------------------------------------------------------

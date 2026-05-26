@@ -3,7 +3,7 @@ import { PublicKey, SystemProgram } from "@solana/web3.js";
 import { Vet57b } from "../target/types/vet_57b";
 import { TestingContext } from "./helpers/testing_context.helper";
 import { givenNewMedicalRecord, givenNewMedicalAppointment } from "./helpers/data_mothers";
-import { MedicalRecord, MedicalAppointment } from "../app/models";
+import { MedicalRecord, MedicalAppointment, MedicalAppointmentCreatedEvent } from "../app/models";
 import { expect } from "chai";
 
 describe('Schedule appointment', () => {
@@ -65,7 +65,7 @@ describe('Schedule appointment', () => {
       expect(appointment.paidValue.eq(new BN(0))).to.be.true;
 
       // Assert that the event was emitted with the correct information
-      const event = await testingContext.getEvent<any>(tx);
+      const event = await testingContext.getEvent<MedicalAppointmentCreatedEvent>(tx);
       expect(event).not.to.be.null;
       expect(event.id.toBase58()).equals(id.toBase58());
       expect(event.petId.toBase58()).equals(medicalRecordAddress.toBase58());

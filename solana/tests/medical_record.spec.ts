@@ -61,5 +61,30 @@ describe('Medical record', () => {
       expect(event.caretakerName).equals(newMedicalRecord.caretakerName);
       expect(event.caretakerPhone).equals(newMedicalRecord.caretakerPhone);
     });
+
+    it('Fails when the pet ID is already registered', async () => {
+      // Create a new medical record
+      const newMedicalRecord = givenNewMedicalRecord();
+
+      // Register the pet for the first time
+      const tx = await vetProgram.methods.registerPet(newMedicalRecord).accounts({
+        medicalRecord: MedicalRecord.deriveAddress(newMedicalRecord.id, vetProgram.programId),
+        authority: testingContext.defaultSigner.publicKey,
+        systemProgram: SystemProgram.programId,
+      }).signers([testingContext.defaultSigner]).rpc();
+      await testingContext.waitForTransactions(tx);
+
+      // Try to register the same pet again with the same ID
+      try {
+        await vetProgram.methods.registerPet(newMedicalRecord).accounts({
+          medicalRecord: MedicalRecord.deriveAddress(newMedicalRecord.id, vetProgram.programId),
+          authority: testingContext.defaultSigner.publicKey,
+          systemProgram: SystemProgram.programId,
+        }).signers([testingContext.defaultSigner]).rpc();
+        expect.fail('Expected an AnchorError for duplicate pet ID');
+      } catch (err) {
+        expect(err).to.exist;
+      }
+    });
   });
 });
