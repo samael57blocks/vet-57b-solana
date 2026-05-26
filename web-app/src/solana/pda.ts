@@ -3,9 +3,10 @@ import { PublicKey } from '@solana/web3.js';
 /**
  * Seed prefixes matching the Anchor Rust program seeds exactly.
  */
-const MEDICAL_RECORD_SEED = Buffer.from('medical-record');
-const MEDICAL_APPOINTMENT_SEED = Buffer.from('medical-appointment');
-const PET_CHECKIN_SEED = Buffer.from('pet-checkin');
+const encoder = new TextEncoder();
+const MEDICAL_RECORD_SEED = encoder.encode('medical-record');
+const MEDICAL_APPOINTMENT_SEED = encoder.encode('medical-appointment');
+const PET_CHECKIN_SEED = encoder.encode('pet-checkin');
 
 /**
  * Derives the PDA for a MedicalRecord account.
