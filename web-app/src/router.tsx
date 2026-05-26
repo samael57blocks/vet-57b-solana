@@ -2,6 +2,7 @@ import { createBrowserRouter } from "react-router-dom";
 import App from "./App";
 import NotFoundPage from "./common/pages/NotFound";
 import { PetsOverviewPage } from "./pets/pages/PetsOverview";
+import { AppointmentsOverviewPage } from "./appointments/pages/AppointmentsOverview";
 
 export const router = createBrowserRouter([
   {
@@ -9,8 +10,9 @@ export const router = createBrowserRouter([
     element: <App />,
     children: [
       { index: true, element: <PetsOverviewPage /> },
+      { path: "appointments", element: <AppointmentsOverviewPage /> },
       // Catch-all route for 404 - must be last
       { path: "*", element: <NotFoundPage /> },
     ],
   },
-]); 
+]);

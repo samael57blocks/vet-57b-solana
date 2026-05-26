@@ -1,6 +1,10 @@
 import { useState } from "react";
-import type { Pet } from "../types/pet";
-import { PetOverView } from "../components/PetOverview";
+import type { Pet, AnimalType } from "../types/pet";
+import { PetOverView, PetOverviewSkeleton } from "../components/PetOverview";
+import { RegisterPetForm } from "../components/RegisterPetForm";
+import { useTxState } from "../../common/hooks/useTxState";
+import { useVetProgram } from "../../solana/useVetProgram";
+import { registerPet } from "../services/solana/petService";
 
 /**
  * Props for the PetsOverviewView component
@@ -8,10 +12,18 @@ import { PetOverView } from "../components/PetOverview";
 interface PetsOverviewViewProps {
     /** List of pets to display */
     pets: Pet[];
+    /** Whether data is loading */
+    loading: boolean;
+    /** Error message if fetching failed */
+    error: string | null;
+    /** Retry callback for error state */
+    onRetry: () => void;
+    /** Whether the wallet is connected */
+    isWalletConnected: boolean;
 }
 
 /**
- * Form data structure for registering a new pet
+ * Form data structure for registering a new pet (legacy support).
  */
 interface PetFormData {
     name: string;
@@ -27,13 +39,36 @@ interface FormErrors {
 }
 
 /**
- * PetsOverviewView Component
- * Displays a list of pets with the ability to register new ones
+ * RegisterPetFormData from the RegisterPetForm component.
  */
-export function PetsOverviewView({ pets }: PetsOverviewViewProps) {
+interface RegisterPetFormData {
+    name: string;
+    species: AnimalType | '';
+    breed: string;
+    birthDate: string;
+    caretakerName: string;
+    caretakerPhone: string;
+}
+
+/**
+ * PetsOverviewView Component
+ *
+ * Displays on-chain pets with loading/error/empty states.
+ * Shows RegisterPetForm dialog for adding new pets.
+ * Handles the full transaction lifecycle for pet registration.
+ */
+export function PetsOverviewView({
+    pets,
+    loading,
+    error,
+    onRetry,
+    isWalletConnected,
+}: PetsOverviewViewProps) {
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [formData, setFormData] = useState<PetFormData>({ name: "", age: "" });
     const [errors, setErrors] = useState<FormErrors>({});
+    const txState = useTxState();
+    const program = useVetProgram();
 
     const openDialog = () => {
         setIsDialogOpen(true);
@@ -45,6 +80,7 @@ export function PetsOverviewView({ pets }: PetsOverviewViewProps) {
         setIsDialogOpen(false);
         setFormData({ name: "", age: "" });
         setErrors({});
+        txState.reset();
     };
 
     const validateForm = (): boolean => {
@@ -65,7 +101,7 @@ export function PetsOverviewView({ pets }: PetsOverviewViewProps) {
         return Object.keys(newErrors).length === 0;
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleLegacySubmit = (e: React.FormEvent) => {
         e.preventDefault();
         validateForm();
     };
@@ -78,6 +114,42 @@ export function PetsOverviewView({ pets }: PetsOverviewViewProps) {
         }
     };
 
+    const handleRegisterPet = async (data: RegisterPetFormData) => {
+        if (!program) return;
+
+        const birthDate = new Date(data.birthDate);
+        const today = new Date();
+        const age = today.getFullYear() - birthDate.getFullYear();
+
+        await txState.execute(async () => {
+            return registerPet(program, {
+                name: data.name,
+                species: data.species as AnimalType,
+                age,
+                caretakerName: data.caretakerName,
+                caretakerPhone: data.caretakerPhone,
+            });
+        });
+
+        // Refresh pets list after registration attempt
+        onRetry();
+    };
+
+    // Wallet not connected
+    if (!isWalletConnected) {
+        return (
+            <main className="main-content">
+                <div className="page-header">
+                    <h1 className="page-title">Pets</h1>
+                </div>
+                <div className="empty-state">
+                    <div className="empty-state-icon">🐾</div>
+                    <p className="empty-state-text">Connect wallet to see your pets</p>
+                </div>
+            </main>
+        );
+    }
+
     return (
         <main className="main-content">
             <div className="page-header">
@@ -87,12 +159,39 @@ export function PetsOverviewView({ pets }: PetsOverviewViewProps) {
                 </button>
             </div>
 
-            {pets.length === 0 ? (
+            {/* Loading state */}
+            {loading && (
+                <div className="pets-grid">
+                    {Array.from({ length: 3 }).map((_, i) => (
+                        <PetOverviewSkeleton key={i} />
+                    ))}
+                </div>
+            )}
+
+            {/* Error state */}
+            {error && !loading && (
+                <div className="error-state">
+                    <p className="error-state-text">Failed to load pets</p>
+                    <p className="error-state-detail">{error}</p>
+                    <button className="btn-primary" onClick={onRetry}>
+                        Retry
+                    </button>
+                </div>
+            )}
+
+            {/* Empty state */}
+            {!loading && !error && pets.length === 0 && (
                 <div className="empty-state">
                     <div className="empty-state-icon">🐾</div>
                     <p className="empty-state-text">No pets registered yet</p>
+                    <button className="btn-primary" onClick={openDialog}>
+                        Register your first pet
+                    </button>
                 </div>
-            ) : (
+            )}
+
+            {/* Pets grid */}
+            {!loading && !error && pets.length > 0 && (
                 <div className="pets-grid">
                     {pets.map((pet) => (
                         <PetOverView key={pet.id} pet={pet} />
@@ -100,51 +199,76 @@ export function PetsOverviewView({ pets }: PetsOverviewViewProps) {
                 </div>
             )}
 
+            {/* Legacy dialog for registration (uses new RegisterPetForm inside) */}
             {isDialogOpen && (
                 <div className="dialog-overlay" onClick={closeDialog}>
                     <div className="dialog" onClick={(e) => e.stopPropagation()}>
                         <h2 className="dialog-title">Register New Pet</h2>
-                        <form onSubmit={handleSubmit}>
-                            <div className="form-group">
-                                <label className="form-label" htmlFor="pet-name">
-                                    Name
-                                </label>
-                                <input
-                                    id="pet-name"
-                                    type="text"
-                                    className={`form-input ${errors.name ? "error" : ""}`}
-                                    placeholder="Enter pet name"
-                                    value={formData.name}
-                                    onChange={(e) => handleInputChange("name", e.target.value)}
-                                />
-                                {errors.name && <p className="form-error">{errors.name}</p>}
-                            </div>
 
-                            <div className="form-group">
-                                <label className="form-label" htmlFor="pet-age">
-                                    Age
-                                </label>
-                                <input
-                                    id="pet-age"
-                                    type="number"
-                                    className={`form-input ${errors.age ? "error" : ""}`}
-                                    placeholder="Enter pet age"
-                                    value={formData.age}
-                                    onChange={(e) => handleInputChange("age", e.target.value)}
-                                    min="1"
-                                />
-                                {errors.age && <p className="form-error">{errors.age}</p>}
-                            </div>
+                        <RegisterPetForm
+                            txState={txState.state}
+                            onSubmit={handleRegisterPet}
+                            onReset={txState.reset}
+                            isWalletConnected={isWalletConnected}
+                        />
 
-                            <div className="dialog-actions">
-                                <button type="button" className="btn-secondary" onClick={closeDialog}>
-                                    Cancel
-                                </button>
-                                <button type="submit" className="btn-primary">
-                                    Register Pet
-                                </button>
-                            </div>
-                        </form>
+                        {/* Legacy form (kept for backward compatibility) */}
+                        <details className="legacy-form-toggle">
+                            <summary>Legacy form</summary>
+                            <form onSubmit={handleLegacySubmit}>
+                                <div className="form-group">
+                                    <label className="form-label" htmlFor="pet-name">
+                                        Name
+                                    </label>
+                                    <input
+                                        id="pet-name"
+                                        type="text"
+                                        className={`form-input ${errors.name ? "error" : ""}`}
+                                        placeholder="Enter pet name"
+                                        value={formData.name}
+                                        onChange={(e) =>
+                                            handleInputChange("name", e.target.value)
+                                        }
+                                    />
+                                    {errors.name && (
+                                        <p className="form-error">{errors.name}</p>
+                                    )}
+                                </div>
+
+                                <div className="form-group">
+                                    <label className="form-label" htmlFor="pet-age">
+                                        Age
+                                    </label>
+                                    <input
+                                        id="pet-age"
+                                        type="number"
+                                        className={`form-input ${errors.age ? "error" : ""}`}
+                                        placeholder="Enter pet age"
+                                        value={formData.age}
+                                        onChange={(e) =>
+                                            handleInputChange("age", e.target.value)
+                                        }
+                                        min="1"
+                                    />
+                                    {errors.age && (
+                                        <p className="form-error">{errors.age}</p>
+                                    )}
+                                </div>
+
+                                <div className="dialog-actions">
+                                    <button
+                                        type="button"
+                                        className="btn-secondary"
+                                        onClick={closeDialog}
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button type="submit" className="btn-primary">
+                                        Register Pet (Legacy)
+                                    </button>
+                                </div>
+                            </form>
+                        </details>
                     </div>
                 </div>
             )}
