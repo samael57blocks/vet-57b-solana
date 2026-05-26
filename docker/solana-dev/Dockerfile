@@ -3,11 +3,11 @@
 # Versions:
 #   - Solana CLI: 1.18.26
 #   - Anchor CLI: 0.32.1
-#   - Rust: nightly-2025-04-01 (from project's rust-toolchain.toml)
+#   - Rust: nightly-2025-09-01 (from project's rust-toolchain.toml)
 #   - Node.js: 20.x
 # =============================================================================
 
-FROM ubuntu:22.04 AS base
+FROM ubuntu:24.04 AS base
 
 SHELL ["/bin/bash", "-c"]
 
@@ -30,12 +30,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     pkg-config \
     libz-dev \
     protobuf-compiler \
-    clang-14 \
-    llvm-14 \
+    clang-18 \
+    llvm-18 \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* \
-    && ln -s /usr/bin/clang-14 /usr/bin/clang \
-    && ln -s /usr/bin/llvm-config-14 /usr/bin/llvm-config
+    && ln -s /usr/bin/clang-18 /usr/bin/clang \
+    && ln -s /usr/bin/llvm-config-18 /usr/bin/llvm-config
 
 # ---------------------------------------------------------------------------
 # Node.js 20.x + yarn
@@ -49,9 +49,9 @@ RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
 # Rust (rustup + nightly toolchain)
 # ---------------------------------------------------------------------------
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y \
-    && rustup install nightly-2025-04-01 \
-    && rustup default nightly-2025-04-01 \
-    && rustup component add rust-src --toolchain nightly-2025-04-01 \
+    && rustup install nightly-2025-09-01 \
+    && rustup default nightly-2025-09-01 \
+    && rustup component add rust-src --toolchain nightly-2025-09-01 \
     && rustc --version
 
 # ---------------------------------------------------------------------------
