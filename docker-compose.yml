@@ -1,0 +1,45 @@
+# =============================================================================
+# Solana + Anchor Development Environment
+#
+# Build (first time, ~30-40 min):
+#   docker compose build
+#
+# Start an interactive shell:
+#   docker compose run --rm dev
+#
+# Run Anchor tests (auto-starts/stops validator):
+#   docker compose run --rm dev anchor test
+#
+# Build the Solana program:
+#   docker compose run --rm dev anchor build
+#
+# Install JS deps + run tests manually:
+#   docker compose run --rm dev bash -c "yarn install && yarn run ts-mocha -p ./tsconfig.json -t 1000000 'tests/**/*.ts'"
+# =============================================================================
+
+services:
+  dev:
+    build:
+      context: .
+      dockerfile: docker/solana-dev/Dockerfile
+    image: vet-57b-solana-dev
+    container_name: vet-57b-solana-dev
+    volumes:
+      # Mount the project at /workspace
+      - ./:/workspace
+      # Persist cargo registry and Solana keys between runs
+      - cargo-cache:/root/.cargo
+      - solana-config:/root/.config/solana
+    working_dir: /workspace/solana
+    stdin_open: true
+    tty: true
+    ports:
+      - "8899:8899"   # Solana JSON RPC (for persistent validator)
+      - "8900:8900"   # Solana WebSocket
+    environment:
+      - ANCHOR_WALLET=/root/.config/solana/id.json
+      - RUST_BACKTRACE=1
+
+volumes:
+  cargo-cache:
+  solana-config:
