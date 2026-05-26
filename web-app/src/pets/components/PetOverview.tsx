@@ -18,7 +18,7 @@ function getRandomPetImage(petId: string): string {
 
 /**
  * PetOverView Component
- * Displays a card with pet information including photo, name, and age
+ * Displays a card with pet information including photo, name, species, breed, and age
  */
 export function PetOverView({ pet }: PetOverviewProps) {
     return (
@@ -31,9 +31,29 @@ export function PetOverView({ pet }: PetOverviewProps) {
             />
             <div className="pet-card-content">
                 <h3 className="pet-card-name">{pet.name}</h3>
+                <p className="pet-card-species">{pet.animalType}</p>
                 <p className="pet-card-age">
                     {pet.age} {pet.age === 1 ? "year" : "years"} old
                 </p>
+                <p className="pet-card-caretaker">
+                    Caretaker: {pet.caretakerName}
+                </p>
+            </div>
+        </article>
+    );
+}
+
+/**
+ * Loading skeleton for PetOverview card
+ */
+export function PetOverviewSkeleton() {
+    return (
+        <article className="pet-card pet-card-skeleton" aria-hidden="true">
+            <div className="skeleton-image" />
+            <div className="pet-card-content">
+                <div className="skeleton-line skeleton-line-title" />
+                <div className="skeleton-line skeleton-line-text" />
+                <div className="skeleton-line skeleton-line-text-short" />
             </div>
         </article>
     );
