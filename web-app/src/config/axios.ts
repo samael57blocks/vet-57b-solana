@@ -20,12 +20,14 @@ const backendUrl = import.meta.env.VITE_BACKEND_URL;
  */
 export const apiClient: AxiosInstance = axios.create({
   baseURL: backendUrl,
-  transformRequest: ( data: any): any => {
-    console.log('Sending request', data);
-    return data;
-  },
-  transformResponse: ( data: any): any => {
-    console.log('Received response', data);
+  transformResponse: (data: any): any => {
+    if (typeof data === "string") {
+      try {
+        return JSON.parse(data);
+      } catch {
+        return data;
+      }
+    }
     return data;
   },
 });
