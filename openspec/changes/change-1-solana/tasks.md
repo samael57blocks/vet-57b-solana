@@ -51,6 +51,6 @@ Chain strategy: pending
 ## Phase 4: Test Suites
 
 - [x] 4.1 Wire real accounts in `medical_record.spec.ts`: happy path test passes; event assertion fixed; account assertion fixed
-- [ ] 4.2 Create `schedule_appointment.spec.ts`: happy path, unregistered pet rejection, duplicate ID rejection
-- [ ] 4.3 Create `pay_appointment.spec.ts`: full payment, partial payment, overpayment error
-- [ ] 4.4 Create `pet_checkin.spec.ts`: happy path with timestamp check, unregistered pet, duplicate ID
+- [x] 4.2 Create `schedule_appointment.spec.ts`: happy path, unregistered pet rejection, duplicate ID rejection
+- [x] 4.3 Create `pay_appointment.spec.ts`: full payment, partial payment, overpayment error
+- [x] 4.4 Create `pet_checkin.spec.ts`: happy path with timestamp check, unregistered pet, duplicate ID
