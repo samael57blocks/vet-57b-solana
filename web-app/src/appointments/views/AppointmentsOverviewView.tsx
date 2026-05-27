@@ -145,6 +145,7 @@ export function AppointmentsOverviewView({
             {/* Appointment List */}
             <AppointmentList
                 appointments={appointments}
+                pets={pets}
                 loading={loading}
                 error={error}
                 onRetry={onRetry}
