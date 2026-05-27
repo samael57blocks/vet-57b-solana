@@ -14,7 +14,8 @@ export function AppointmentsOverviewPage() {
     const { appointments, loading, error, refetch } = useAppointments();
     const { pets } = usePetsOverview();
     const program = useVetProgram();
-    const isWalletConnected = program !== null;
+    const isMockMode = import.meta.env.VITE_USE_MOCK_DATA === 'true';
+    const isWalletConnected = isMockMode || program !== null;
 
     const handleMutated = () => {
         refetch();

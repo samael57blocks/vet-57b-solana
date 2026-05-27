@@ -68,14 +68,23 @@ export function AppointmentsOverviewView({
         scheduleTxState.reset();
     };
 
+    const isMockMode = import.meta.env.VITE_USE_MOCK_DATA === 'true';
+
     const handleScheduleAppointment = async (data: ScheduleFormData) => {
-        if (!program) return;
+        if (!program && !isMockMode) return;
+
+        // Mock mode: simulate successful scheduling
+        if (isMockMode) {
+            console.log('[Mock] Scheduling appointment for pet:', data.petId);
+            onMutated();
+            return;
+        }
 
         // Convert date string (YYYY-MM-DD) to unix timestamp
         const dateTimestamp = Math.floor(new Date(data.date + 'T' + data.time).getTime() / 1000);
 
         await scheduleTxState.execute(async () => {
-            return scheduleAppointment(program, {
+            return scheduleAppointment(program!, {
                 petId: data.petId,
                 date: dateTimestamp,
                 time: data.time,
@@ -88,10 +97,17 @@ export function AppointmentsOverviewView({
     };
 
     const handlePayAppointment = async (appointmentId: string, amount: number) => {
-        if (!program) return;
+        if (!program && !isMockMode) return;
+
+        // Mock mode: simulate successful payment
+        if (isMockMode) {
+            console.log('[Mock] Paying appointment:', appointmentId, amount);
+            onMutated();
+            return;
+        }
 
         await payTxState.execute(async () => {
-            return payAppointment(program, appointmentId, amount);
+            return payAppointment(program!, appointmentId, amount);
         });
 
         // Refresh data after payment

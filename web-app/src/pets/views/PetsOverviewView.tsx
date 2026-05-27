@@ -114,15 +114,24 @@ export function PetsOverviewView({
         }
     };
 
+    const isMockMode = import.meta.env.VITE_USE_MOCK_DATA === 'true';
+
     const handleRegisterPet = async (data: RegisterPetFormData) => {
-        if (!program) return;
+        if (!program && !isMockMode) return;
 
         const birthDate = new Date(data.birthDate);
         const today = new Date();
         const age = today.getFullYear() - birthDate.getFullYear();
 
+        // Mock mode: simulate successful registration
+        if (isMockMode) {
+            console.log('[Mock] Registering pet:', data.name);
+            onRetry();
+            return;
+        }
+
         await txState.execute(async () => {
-            return registerPet(program, {
+            return registerPet(program!, {
                 name: data.name,
                 species: data.species as AnimalType,
                 age,

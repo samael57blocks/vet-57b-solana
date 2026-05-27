@@ -128,9 +128,15 @@ button:focus-visible {
   top: 0;
   right: 0;
   display: flex;
-  gap: 2.5rem;
+  align-items: center;
+  gap: 1.5rem;
   padding: 1.5rem 3rem;
   z-index: 100;
+}
+
+.nav-links {
+  display: flex;
+  gap: 2.5rem;
 }
 
 .navigation-bar a {
@@ -160,6 +166,114 @@ button:focus-visible {
 
 .navigation-bar a:hover::after {
   width: 100%;
+}
+
+/* Wallet button overrides for dark theme */
+.navigation-bar .wallet-adapter-button {
+  height: 38px;
+  padding: 0 1.25rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+  border-radius: 8px;
+  background: var(--color-accent);
+  color: var(--color-bg);
+  border: none;
+  transition: all 0.2s ease;
+}
+
+.navigation-bar .wallet-adapter-button:hover {
+  background: var(--color-accent-hover);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+.navigation-bar .wallet-adapter-button:not(:disabled) {
+  cursor: pointer;
+}
+
+.navigation-bar .wallet-adapter-button[disabled] {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.navigation-bar .wallet-adapter-button-end-icon,
+.navigation-bar .wallet-adapter-button-end-icon img,
+.navigation-bar .wallet-adapter-button-start-icon,
+.navigation-bar .wallet-adapter-button-start-icon img {
+  width: 18px;
+  height: 18px;
+}
+
+.navigation-bar .wallet-adapter-dropdown {
+  position: relative;
+}
+
+.navigation-bar .wallet-adapter-dropdown-list {
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  top: calc(100% + 8px);
+  right: 0;
+  left: auto;
+  min-width: 160px;
+}
+
+.navigation-bar .wallet-adapter-dropdown-list-item {
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+  background: transparent;
+  border-bottom: 1px solid var(--color-border);
+  padding: 0.6rem 1rem;
+  transition: all 0.15s ease;
+}
+
+.navigation-bar .wallet-adapter-dropdown-list-item:hover {
+  background: var(--color-bg-tertiary);
+  color: var(--color-text);
+}
+
+.navigation-bar .wallet-adapter-dropdown-list-item:last-child {
+  border-bottom: none;
+}
+
+/* Wallet selection modal dark theme */
+.wallet-adapter-modal-wrapper {
+  background: var(--color-bg-secondary);
+}
+
+.wallet-adapter-modal-button-close {
+  background: var(--color-bg-tertiary);
+}
+
+.wallet-adapter-modal-title {
+  color: var(--color-text);
+}
+
+.wallet-adapter-modal-list-more {
+  color: var(--color-text-muted);
+}
+
+.wallet-adapter-modal-list .wallet-adapter-button {
+  color: var(--color-text);
+  font-size: 0.9rem;
+  padding: 0 1.25rem;
+  border-radius: 8px;
+  transition: background 0.15s ease;
+}
+
+.wallet-adapter-modal-list .wallet-adapter-button:hover {
+  background: var(--color-bg-tertiary);
+}
+
+.wallet-adapter-modal-overlay {
+  background: var(--color-overlay);
+}
+
+.wallet-adapter-modal-list .wallet-adapter-button-end-icon,
+.wallet-adapter-modal-list .wallet-adapter-button-end-icon img,
+.wallet-adapter-modal-list .wallet-adapter-button-start-icon,
+.wallet-adapter-modal-list .wallet-adapter-button-start-icon img {
+  width: 24px;
+  height: 24px;
 }
 
 /* Main Content */

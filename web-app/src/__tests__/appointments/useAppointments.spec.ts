@@ -47,6 +47,7 @@ const sampleAppointments: Appointment[] = [
 describe('useAppointments', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        vi.stubEnv('VITE_USE_MOCK_DATA', 'false');
     });
 
     it('returns empty appointments when wallet is not connected', async () => {
