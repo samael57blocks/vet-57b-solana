@@ -67,7 +67,7 @@ function createProgramStub() {
       medicalAppointment: { all: vi.fn() },
       petCheckin: { all: vi.fn() },
     },
-    programId: new PublicKey('GW9yVGbyRmzwxAzNCmYHruT8FAmVLh48ibfdjniHgzx3'),
+    programId: new PublicKey('6uka17bBE74Sf5s9AMqQvPRMsk3ujb8JhaUpMHYpg5mv'),
     provider: {
       publicKey: Keypair.generate().publicKey,
     },

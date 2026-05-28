@@ -5,7 +5,7 @@
  * IDL can be found at `target/idl/vet_57b.json`.
  */
 export type Vet57b = {
-  "address": "GW9yVGbyRmzwxAzNCmYHruT8FAmVLh48ibfdjniHgzx3",
+  "address": "6uka17bBE74Sf5s9AMqQvPRMsk3ujb8JhaUpMHYpg5mv",
   "metadata": {
     "name": "vet57b",
     "version": "0.1.0",

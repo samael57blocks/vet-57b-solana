@@ -1,6 +1,6 @@
 use anchor_lang::prelude::*;
 
-declare_id!("GW9yVGbyRmzwxAzNCmYHruT8FAmVLh48ibfdjniHgzx3");
+declare_id!("6uka17bBE74Sf5s9AMqQvPRMsk3ujb8JhaUpMHYpg5mv");
 
 // ---------------------------------------------------------------------------
 // Constants: pre-calculated account space

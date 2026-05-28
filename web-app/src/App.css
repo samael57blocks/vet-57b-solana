@@ -128,9 +128,15 @@ button:focus-visible {
   top: 0;
   right: 0;
   display: flex;
-  gap: 2.5rem;
+  align-items: center;
+  gap: 1.5rem;
   padding: 1.5rem 3rem;
   z-index: 100;
+}
+
+.nav-links {
+  display: flex;
+  gap: 2.5rem;
 }
 
 .navigation-bar a {
@@ -160,6 +166,114 @@ button:focus-visible {
 
 .navigation-bar a:hover::after {
   width: 100%;
+}
+
+/* Wallet button overrides for dark theme */
+.navigation-bar .wallet-adapter-button {
+  height: 38px;
+  padding: 0 1.25rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+  border-radius: 8px;
+  background: var(--color-accent);
+  color: var(--color-bg);
+  border: none;
+  transition: all 0.2s ease;
+}
+
+.navigation-bar .wallet-adapter-button:hover {
+  background: var(--color-accent-hover);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+.navigation-bar .wallet-adapter-button:not(:disabled) {
+  cursor: pointer;
+}
+
+.navigation-bar .wallet-adapter-button[disabled] {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.navigation-bar .wallet-adapter-button-end-icon,
+.navigation-bar .wallet-adapter-button-end-icon img,
+.navigation-bar .wallet-adapter-button-start-icon,
+.navigation-bar .wallet-adapter-button-start-icon img {
+  width: 18px;
+  height: 18px;
+}
+
+.navigation-bar .wallet-adapter-dropdown {
+  position: relative;
+}
+
+.navigation-bar .wallet-adapter-dropdown-list {
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  top: calc(100% + 8px);
+  right: 0;
+  left: auto;
+  min-width: 160px;
+}
+
+.navigation-bar .wallet-adapter-dropdown-list-item {
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+  background: transparent;
+  border-bottom: 1px solid var(--color-border);
+  padding: 0.6rem 1rem;
+  transition: all 0.15s ease;
+}
+
+.navigation-bar .wallet-adapter-dropdown-list-item:hover {
+  background: var(--color-bg-tertiary);
+  color: var(--color-text);
+}
+
+.navigation-bar .wallet-adapter-dropdown-list-item:last-child {
+  border-bottom: none;
+}
+
+/* Wallet selection modal dark theme */
+.wallet-adapter-modal-wrapper {
+  background: var(--color-bg-secondary);
+}
+
+.wallet-adapter-modal-button-close {
+  background: var(--color-bg-tertiary);
+}
+
+.wallet-adapter-modal-title {
+  color: var(--color-text);
+}
+
+.wallet-adapter-modal-list-more {
+  color: var(--color-text-muted);
+}
+
+.wallet-adapter-modal-list .wallet-adapter-button {
+  color: var(--color-text);
+  font-size: 0.9rem;
+  padding: 0 1.25rem;
+  border-radius: 8px;
+  transition: background 0.15s ease;
+}
+
+.wallet-adapter-modal-list .wallet-adapter-button:hover {
+  background: var(--color-bg-tertiary);
+}
+
+.wallet-adapter-modal-overlay {
+  background: var(--color-overlay);
+}
+
+.wallet-adapter-modal-list .wallet-adapter-button-end-icon,
+.wallet-adapter-modal-list .wallet-adapter-button-end-icon img,
+.wallet-adapter-modal-list .wallet-adapter-button-start-icon,
+.wallet-adapter-modal-list .wallet-adapter-button-start-icon img {
+  width: 24px;
+  height: 24px;
 }
 
 /* Main Content */
@@ -284,8 +398,277 @@ button:focus-visible {
 }
 
 /* ============================================
-   Dialog / Modal
+   Appointment Card
    ============================================ */
+.appointments-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.appointment-card {
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: 16px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.appointment-card::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: var(--color-text-muted);
+  transition: background 0.3s ease;
+}
+
+.appointment-card--pending {
+  border-color: rgba(245, 158, 11, 0.2);
+}
+
+.appointment-card--pending::before {
+  background: #f59e0b;
+}
+
+.appointment-card--paid {
+  border-color: rgba(16, 185, 129, 0.2);
+}
+
+.appointment-card--paid::before {
+  background: var(--color-accent);
+}
+
+.appointment-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+}
+
+.appointment-card--pending:hover {
+  border-color: rgba(245, 158, 11, 0.4);
+  box-shadow: 0 20px 40px rgba(245, 158, 11, 0.08);
+}
+
+.appointment-card--paid:hover {
+  border-color: rgba(16, 185, 129, 0.4);
+  box-shadow: 0 20px 40px rgba(16, 185, 129, 0.08);
+}
+
+.appointment-card-inner {
+  padding: 1.25rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.appointment-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.appointment-card-pet {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.appointment-card-pet-name {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--color-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.appointment-card-pet-id {
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  font-family: 'Courier New', monospace;
+  opacity: 0.6;
+}
+
+.appointment-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.3rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.appointment-status-badge--pending {
+  background: rgba(245, 158, 11, 0.12);
+  color: #fbbf24;
+}
+
+.appointment-status-badge--paid {
+  background: rgba(16, 185, 129, 0.12);
+  color: var(--color-accent);
+}
+
+.appointment-card-details {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+}
+
+.appointment-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.appointment-detail-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-text-muted);
+  opacity: 0.6;
+}
+
+.appointment-detail-value {
+  font-size: 0.9rem;
+  color: var(--color-text);
+  font-weight: 500;
+}
+
+.appointment-card-divider {
+  height: 1px;
+  background: var(--color-border);
+  margin: 0;
+}
+
+.appointment-card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.appointment-payment-progress {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.appointment-payment-amounts {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.85rem;
+}
+
+.appointment-payment-amounts .amount {
+  color: var(--color-text);
+  font-weight: 500;
+}
+
+.appointment-payment-amounts .amount--paid {
+  color: var(--color-accent);
+}
+
+.appointment-payment-amounts .amount--pending {
+  color: #f59e0b;
+}
+
+.appointment-payment-bar {
+  width: 100%;
+  height: 6px;
+  background: var(--color-bg-tertiary);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.appointment-payment-bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.5s ease;
+}
+
+.appointment-payment-bar-fill--partial {
+  background: linear-gradient(90deg, #f59e0b, var(--color-accent));
+}
+
+.appointment-payment-bar-fill--paid {
+  background: var(--color-accent);
+}
+
+.appointment-payment-bar-fill--pending {
+  background: rgba(245, 158, 11, 0.4);
+  width: 5% !important;
+}
+
+/* Appointment card skeleton */
+.appointment-card-skeleton {
+  pointer-events: none;
+}
+
+.appointment-card-skeleton .skeleton-line {
+  height: 14px;
+  background: linear-gradient(90deg, var(--color-bg-tertiary) 25%, rgba(255,255,255,0.04) 50%, var(--color-bg-tertiary) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 4px;
+}
+
+.appointment-card-skeleton .skeleton-line-title {
+  width: 40%;
+  height: 18px;
+  margin-bottom: 0.5rem;
+}
+
+.appointment-card-skeleton .skeleton-line-text {
+  width: 65%;
+}
+
+.appointment-card-skeleton .skeleton-line-text-short {
+  width: 35%;
+}
+
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* Pay appointment section */
+.pay-appointment-section {
+  margin-top: 1.5rem;
+  padding: 1.5rem;
+  background: var(--color-bg-tertiary);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+}
+
+.pay-appointment-section h3 {
+  margin: 0 0 1rem;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.pay-appointment-section .btn-primary {
+  width: 100%;
+}
+
+/* ============================================
+    Dialog / Modal
+    ============================================ */
 .dialog-overlay {
   position: fixed;
   inset: 0;

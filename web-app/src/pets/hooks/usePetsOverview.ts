@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import type { Pet } from '../types/pet';
 import { useVetProgram } from '../../solana/useVetProgram';
 import { getPets } from '../services/solana/petService';
+import { MockPetService } from '../services/mock/petService';
 
 /**
  * Return type for the usePetsOverview hook.
@@ -21,6 +22,8 @@ export interface UsePetsOverviewReturn {
  * Hook that fetches all MedicalRecord accounts from the Solana program
  * using the connected wallet. Returns pets, loading state, error state, and a refetch function.
  *
+ * When VITE_USE_MOCK_DATA=true, returns mock data without needing a Solana validator.
+ *
  * Handles:
  * - Disconnected wallet → empty pets
  * - Loading state → skeleton ready
@@ -34,6 +37,26 @@ export function usePetsOverview(): UsePetsOverviewReturn {
     const [error, setError] = useState<string | null>(null);
 
     const fetchPets = useCallback(async () => {
+        const isMockMode = import.meta.env.VITE_USE_MOCK_DATA === 'true';
+
+        // Mock mode: return mock data without needing on-chain connection
+        if (isMockMode) {
+            setLoading(true);
+            setError(null);
+            try {
+                const result = await MockPetService.getPets();
+                setPets(result);
+            } catch (err: unknown) {
+                const message = err instanceof Error ? err.message : String(err);
+                setError(message);
+                setPets([]);
+            } finally {
+                setLoading(false);
+            }
+            return;
+        }
+
+        // On-chain mode: requires a connected wallet + running validator
         if (!program) {
             setPets([]);
             setLoading(false);

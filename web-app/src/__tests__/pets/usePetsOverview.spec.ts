@@ -47,6 +47,7 @@ const samplePets: Pet[] = [
 describe('usePetsOverview', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.stubEnv('VITE_USE_MOCK_DATA', 'false');
   });
 
   it('returns empty pets when wallet is not connected', async () => {
