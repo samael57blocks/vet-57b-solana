@@ -2,7 +2,10 @@ module github.com/57blocks/vet-57b-backend
 
 go 1.26.3
 
-require github.com/jackc/pgx/v5 v5.7.2
+require (
+	github.com/go-chi/chi/v5 v5.2.1
+	github.com/jackc/pgx/v5 v5.7.2
+)
 
 require (
 	github.com/jackc/pgpassfile v1.0.0 // indirect

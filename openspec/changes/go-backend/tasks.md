@@ -37,11 +37,11 @@ Chain strategy: feature-branch-chain (PR 1 targets feature/tracker branch)
 
 ## Phase 2: REST API
 
-- [ ] 2.1 Create `internal/api/router.go` — chi router, `GET /health`, JSON middleware
-- [ ] 2.2 Create `internal/api/pets.go` — list + get by ID
-- [ ] 2.3 Create `internal/api/appointments.go` — list (with `?petId=` filter) + get by ID
-- [ ] 2.4 Create `internal/api/checkins.go` — `GET /api/v1/pets/:id/checkins`
-- [ ] 2.5 Table-driven handler tests for all 6 endpoints via `httptest` + mocked DB
+- [x] 2.1 Create `internal/api/router.go` — chi router, `GET /health`, JSON middleware
+- [x] 2.2 Create `internal/api/pets.go` — list + get by ID
+- [x] 2.3 Create `internal/api/appointments.go` — list (with `?petId=` filter) + get by ID
+- [x] 2.4 Create `internal/api/checkins.go` — `GET /api/v1/pets/:id/checkins`
+- [x] 2.5 Table-driven handler tests for all 6 endpoints via `httptest` + mocked DB
 
 ## Phase 3: Event Indexer
 
