@@ -215,7 +215,7 @@ func (q *Queries) UpsertAppointment(
 func (q *Queries) UpsertCheckin(
 	ctx context.Context,
 	id, petID string,
-	checkinTime interface{},
+	checkinTime time.Time,
 ) error {
 	_, err := q.pool.Exec(ctx, `
 		INSERT INTO checkins (id, pet_id, checkin_time)

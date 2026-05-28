@@ -55,7 +55,7 @@ Chain strategy: feature-branch-chain (PR 1 targets feature/tracker branch)
 
 ## Phase 4: Wiring & Deployment
 
-- [ ] 4.1 Create `backend/cmd/server/main.go` — config init, wiring, SIGTERM/SIGINT handling
-- [ ] 4.2 Modify `docker-compose.yml` — add backend + PostgreSQL services with volume + healthcheck
-- [ ] 4.3 Run `go mod tidy` to lock `go.sum`
-- [ ] 4.4 DB integration tests: migration idempotency, upsert, FK violations
+- [x] 4.1 Create `backend/cmd/server/main.go` — config init, wiring, SIGTERM/SIGINT handling
+- [x] 4.2 Modify `docker-compose.yml` — add backend + PostgreSQL services with volume + healthcheck
+- [x] 4.3 Run `go mod tidy` to lock `go.sum`
+- [x] 4.4 DB integration tests: migration idempotency, upsert, FK violations
