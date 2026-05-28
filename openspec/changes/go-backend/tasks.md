@@ -45,13 +45,13 @@ Chain strategy: feature-branch-chain (PR 1 targets feature/tracker branch)
 
 ## Phase 3: Event Indexer
 
-- [ ] 3.1 Create `internal/solana/client.go` — SolanaClient interface + mock
-- [ ] 3.2 Create `internal/listener/websocket.go` — WS subscription, log parsing for both events, exponential backoff reconnect
-- [ ] 3.3 Create `internal/listener/poller.go` — periodic GetProgramAccounts with DataSize filter
-- [ ] 3.4 Create `internal/listener/listener.go` — orchestrator for WS + poller goroutines, graceful shutdown
-- [ ] 3.5 Unit tests: event parsing from known log strings
-- [ ] 3.6 Unit tests: account deserialization from known borsh bytes
-- [ ] 3.7 Unit tests: WS reconnect backoff (1s→2s→...→60s with jitter)
+- [x] 3.1 Create `internal/solana/client.go` — SolanaClient interface + mock
+- [x] 3.2 Create `internal/listener/websocket.go` — WS subscription, log parsing for both events, exponential backoff reconnect
+- [x] 3.3 Create `internal/listener/poller.go` — periodic GetProgramAccounts with DataSize filter
+- [x] 3.4 Create `internal/listener/listener.go` — orchestrator for WS + poller goroutines, graceful shutdown
+- [x] 3.5 Unit tests: event parsing from known log strings
+- [x] 3.6 Unit tests: account deserialization from known borsh bytes
+- [x] 3.7 Unit tests: WS reconnect backoff (1s→2s→...→60s with jitter)
 
 ## Phase 4: Wiring & Deployment
 

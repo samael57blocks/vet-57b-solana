@@ -1,111 +1,97 @@
-# Apply Progress: Go Backend — PR 2 (REST API)
+# Apply Progress: Go Backend — PR 3 (Event Indexer)
 
 ## Change
-`go-backend` — Phase 2 REST API (PR 2 of 4)
+`go-backend` — Phase 3 Event Indexer (PR 3 of 4)
 
 ## Mode
-Standard — No Strict TDD (Go module has no pre-configured test runner; test infra is scaffolded in 1.7)
+Standard — Go uses `go test` framework. Tests are table-driven with mock interfaces.
 
 ## Delivery
 - Chain strategy: `feature-branch-chain`
-- This PR targets the PR 1 branch (`feat/go-backend-01-foundation`), not main
-- Estimated ~450 lines (within chained PR plan)
+- PR 3 targets PR 2 branch (`feat/go-backend-02-api`)
+- All 45 tests pass (20 API + 4 solana + 21 listener)
 
 ## Completed Tasks
 
-### 1.1 Init Go module
-- **File**: `backend/go.mod`, `backend/go.sum`
-- **What**: `go mod init github.com/57blocks/vet-57b-backend`
-- **Deps added**: `github.com/jackc/pgx/v5 v5.7.2` (direct), `github.com/go-chi/chi/v5 v5.2.1` (resolved via `go get`; will become direct in Phase 2)
-- **Note**: solana-go dep deferred to Phase 3 when its import is needed
+### Phase 1 (from PR 1 — Foundation)
 
-### 1.2 Config struct
-- **File**: `backend/internal/config/config.go`
-- **What**: `Config` struct with 7 env-based fields, `Parse()` function, `String()` with DSN redaction
-- **Env vars**: `SOLANA_RPC_URL`, `SOLANA_WS_URL`, `PROGRAM_ID`, `DATABASE_URL`, `LISTEN_ADDR`, `POLL_INTERVAL`, `WS_MAX_BACKOFF`
-- **Pattern**: 12-factor app, no config files
+- [x] 1.1 Init Go module in `backend/` with chi, pgx v5, solana-go deps
+- [x] 1.2 Create `internal/config/config.go` with env-based config struct
+- [x] 1.3 Create `internal/models/models.go` with Pet, Appointment, Checkin structs
+- [x] 1.4 Create `internal/db/migrations/001_init.sql` — 3 tables, FK, upsert
+- [x] 1.5 Create `internal/db/db.go` — pgxpool setup + migration runner
+- [x] 1.6 Create `backend/Dockerfile` — multi-stage Go build
+- [x] 1.7 Scaffold Go test infra: helpers, DB test container setup, mock stubs
 
-### 1.3 Go structs/models
-- **File**: `backend/internal/models/models.go`
-- **What**: `Pet`, `Appointment`, `Checkin` structs with JSON tags
-- **Maps**: Anchor `MedicalRecord` → `Pet`, `MedicalAppointment` → `Appointment`, `PetCheckin` → `Checkin`
-- **Differences from Anchor**: PubKeys stored as `string` (base58), added `CreatedAt time.Time`, `AnimalType` is `string` not enum
+### Phase 2 (from PR 2 — REST API)
 
-### 1.4 SQL migration
-- **File**: `backend/internal/db/migrations/001_init.sql`
-- **Tables**: `pets`, `appointments`, `checkins`
-- **Features**: FK with CASCADE, `CHECK (animal_type IN ('Dog', 'Cat'))`, `ON CONFLICT (id) DO UPDATE` semantics, indexes on `pet_id`, `IF NOT EXISTS` for idempotency
+- [x] 2.1 Chi router with middleware, `GET /health`
+- [x] 2.2 Pets handlers: `GET /api/v1/pets` (list) and `GET /api/v1/pets/{id}`
+- [x] 2.3 Appointments handlers: list with `?petId=` filter and get by ID
+- [x] 2.4 Checkins handler: `GET /api/v1/pets/{id}/checkins`
+- [x] 2.5 20 table-driven handler tests via httptest + mock Querier
 
-### 1.5 DB layer
-- **File**: `backend/internal/db/db.go`
-- **What**: `Connect()` creates pgxpool (10 max / 2 min conns), `RunMigrations()` reads and executes .sql files sorted by name
-- **Pattern**: Pool-based, not tx-wrapped per migration (each file is its own implicit tx)
+### Phase 3 (this PR — Event Indexer)
 
-### 1.6 Dockerfile
-- **File**: `backend/Dockerfile`
-- **Stages**: `golang:1.23-alpine` build → `alpine:3.20` runtime
-- **Features**: Multi-stage, non-root user, HEALTHCHECK, tzdata + ca-certificates in runtime
+#### 3.1 SolanaClient interface + mock
+- **File**: `internal/solana/client.go`, `internal/solana/client_test.go`
+- **What**: SolanaClient interface with GetProgramAccounts, SubscribeLogs, Close + MockSolanaClient with function fields + 8 sub-tests
 
-### 1.7 Test infra
-- **File**: `backend/internal/testutil/testutil.go`
-- **What**: `SkipIfShort()`, `Context()`, placeholder `DBSetup`, `SolanaClientMock`, `DBMock` types
-- **Pattern**: Table-driven tests, `testing.Short()` guard for integration tests, mock stubs at interface boundaries
+#### 3.2 WebSocket listener
+- **File**: `internal/listener/websocket.go`
+- **What**: WS subscription via SolanaClient.SubscribeLogs, Anchor event log parsing (MedicalRecordCreated, MedicalAppointmentCreated), exponential backoff reconnect (1s initial, x2, 60s cap, ±500ms jitter)
 
-### 2.1 Chi router
-- **File**: `backend/internal/api/router.go`
-- **What**: Chi router with Logger, Recoverer, JSON Content-Type middleware, `GET /health` returning `{"status":"ok"}`
+#### 3.3 Account poller
+- **File**: `internal/listener/poller.go`
+- **What**: Periodic GetProgramAccounts with DataSize filter (175/111/81), manual borsh deserialization for all 3 account types, upsert to DB
 
-### 2.2 Pets handlers
-- **File**: `backend/internal/api/pets.go`
-- **What**: `GET /api/v1/pets` (list) and `GET /api/v1/pets/{id}` (by ID). PetsResource struct with Querier interface.
+#### 3.4 Listener orchestrator
+- **File**: `internal/listener/listener.go`
+- **What**: Concurrent WS + poller goroutines via sync.WaitGroup, graceful shutdown via context cancellation
 
-### 2.3 Appointments handlers
-- **File**: `backend/internal/api/appointments.go`
-- **What**: `GET /api/v1/appointments?petId=X` (filtered list) and `GET /api/v1/appointments/{id}`
+#### 3.5-3.7 Unit tests
+- **File**: `internal/listener/listener_test.go` (21 test functions)
+- Event parsing: 6 test functions (happy path, non-event, malformed, unknown discriminator, too-short)
+- Account deserialization: 6 test functions (MedicalRecord, MedicalAppointment, PetCheckin, wrong discriminators, truncated)
+- Backoff: 7 test functions (initial delay, doubling, cap, reset, jitter, default max, range)
 
-### 2.4 Checkins handler
-- **File**: `backend/internal/api/checkins.go`
-- **What**: `GET /api/v1/pets/{id}/checkins` (as method on PetsResource)
-
-### 2.5 Handler tests
-- **File**: `backend/internal/api/router_test.go`
-- **Files**: `backend/internal/api/queries.go` (Querier interface, 6 methods), `backend/internal/api/helpers.go` (writeJSON/writeError), `backend/internal/db/queries.go` (pgxpool-backed Querier)
-- **Tests**: 20 table-driven tests across 7 test functions, mockQuerier with function fields
-- **Pattern**: `httptest.NewServer` + mock DB interface
+### Supporting files
+- `internal/listener/borsh.go` — Manual borsh decoder
+- `internal/listener/discriminators.go` — Pre-computed SHA-256 discriminator constants
+- `internal/listener/eventstore.go` — EventStore interface + typed params + MockEventStore
+- `internal/listener/dbadapter.go` — Bridge: db.Queries primitives → EventStore
+- `internal/db/queries.go` — Added 3 upsert methods (UpsertPet, UpsertAppointment, UpsertCheckin)
 
 ## Files Changed
 
 | File | Action | What Was Done |
 |------|--------|---------------|
-| `backend/go.mod` | Created | Go module definition with pgx v5 + chi |
-| `backend/go.sum` | Created | Dependency lock file |
-| `backend/internal/config/config.go` | Created | Environment-based configuration |
-| `backend/internal/models/models.go` | Created | Pet, Appointment, Checkin structs |
-| `backend/internal/db/migrations/001_init.sql` | Created | 3 tables with FK, upsert, indexes |
-| `backend/internal/db/db.go` | Created | pgxpool setup + migration runner |
-| `backend/Dockerfile` | Created | Multi-stage Go build |
-| `backend/internal/testutil/testutil.go` | Created | Test helpers, placeholders for mocks |
-| `backend/internal/api/router.go` | Created | Chi router with middleware, health endpoint |
-| `backend/internal/api/pets.go` | Created | PetsResource: List, Get |
-| `backend/internal/api/appointments.go` | Created | AppointmentsResource: List, Get |
-| `backend/internal/api/checkins.go` | Created | Checkins handler on PetsResource |
-| `backend/internal/api/queries.go` | Created | Querier interface (6 methods) |
-| `backend/internal/api/helpers.go` | Created | writeJSON/writeError response helpers |
-| `backend/internal/api/router_test.go` | Created | 20 table-driven tests |
-| `backend/internal/db/queries.go` | Created | pgxpool-backed Querier implementation |
-| `backend/go.mod` | Modified | Added chi v5.2.1 direct dep |
+| `backend/internal/solana/client.go` | Created | SolanaClient interface + MockSolanaClient |
+| `backend/internal/solana/client_test.go` | Created | 4 test functions, 8 sub-tests |
+| `backend/internal/listener/borsh.go` | Created | Manual borsh decoder |
+| `backend/internal/listener/discriminators.go` | Created | Discriminator constants |
+| `backend/internal/listener/eventstore.go` | Created | EventStore interface + typed params + Mock |
+| `backend/internal/listener/dbadapter.go` | Created | DB bridge adapter |
+| `backend/internal/listener/websocket.go` | Created | WS subscription, event parsing, Backoff |
+| `backend/internal/listener/poller.go` | Created | Account polling, borsh deserialization |
+| `backend/internal/listener/listener.go` | Created | Orchestrator: WS + poller |
+| `backend/internal/listener/listener_test.go` | Created | 21 test functions |
+| `backend/internal/db/queries.go` | Modified | Added 3 upsert methods |
+| `backend/go.mod` | Modified | Added gagliardetto/solana-go v1.20.0 |
 | `backend/go.sum` | Modified | Lock file updated |
-| `openspec/changes/go-backend/tasks.md` | Modified | Marked Phase 1-2 tasks [x] |
+| `openspec/changes/go-backend/tasks.md` | Modified | Marked Phase 3 tasks [x] |
 
 ## Deviations from Design
-None — implementation matches design.md.
+1. **Borsh**: Manual deserialization instead of gagliardetto/borsh lib — structs are simple fixed-size, avoids dependency weight.
+2. **SolanaClient interface**: Abstracts WS/RPC calls. Real implementation wired in Phase 4 (main.go).
+3. **Solana-go**: Only used for base58 pubkey encoding (`PublicKeyFromBytes().String()`).
 
-## Issues Found
-None.
+## Remaining Tasks (Phase 4)
 
-## Remaining Tasks (Phase 3-4)
-- [ ] 3.1-3.7 Event Indexer tasks
-- [ ] 4.1-4.4 Wiring tasks
+- [ ] 4.1 Create `backend/cmd/server/main.go` — config init, wiring, signal handling
+- [ ] 4.2 Modify `docker-compose.yml` — add backend + PostgreSQL services
+- [ ] 4.3 Run `go mod tidy` to lock `go.sum`
+- [ ] 4.4 DB integration tests: migration idempotency, upsert, FK violations
 
 ## Status
-12/12 tasks complete (7 Phase 1 + 5 Phase 2). Ready for PR creation targeting `feat/go-backend-01-foundation`.
+**19/22 tasks complete** (7 Phase 1 + 5 Phase 2 + 7 Phase 3). Ready for PR 3.
