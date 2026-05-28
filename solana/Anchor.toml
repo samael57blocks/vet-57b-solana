@@ -5,13 +5,16 @@ resolution = true
 skip-lint = false
 
 [programs.localnet]
-vet_57b = "GW9yVGbyRmzwxAzNCmYHruT8FAmVLh48ibfdjniHgzx3"
+vet_57b = "6uka17bBE74Sf5s9AMqQvPRMsk3ujb8JhaUpMHYpg5mv"
+
+[programs.devnet]
+vet_57b = "6uka17bBE74Sf5s9AMqQvPRMsk3ujb8JhaUpMHYpg5mv"
 
 [registry]
 url = "https://api.apr.dev"
 
 [provider]
-cluster = "Localnet"
+cluster = "Devnet"
 wallet = "~/.config/solana/id.json"
 
 [scripts]

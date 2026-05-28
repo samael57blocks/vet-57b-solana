@@ -12,7 +12,7 @@ import {
 /**
  * The Anchor program ID from Anchor.toml.
  */
-const PROGRAM_ID = new PublicKey('GW9yVGbyRmzwxAzNCmYHruT8FAmVLh48ibfdjniHgzx3');
+const PROGRAM_ID = new PublicKey('6uka17bBE74Sf5s9AMqQvPRMsk3ujb8JhaUpMHYpg5mv');
 
 describe('deriveMedicalRecordAddress', () => {
   it('returns a valid [PublicKey, bump] tuple', () => {
