@@ -1,167 +1,219 @@
-# Vet 57B - Solana Development Exercise
+# Vet 57B — Full-Stack Solana dApp for Veterinary Clinic Management
 
-A hands-on exercise designed to challenge developers in building a **Solana program** for veterinary clinic management. This exercise tests core Solana development skills including account creation, data manipulation, and program interaction, while also exploring off-chain data consumption and presentation.
+A complete **full-stack decentralized application** built on Solana for veterinary clinic management. This project demonstrates end-to-end Web3 development: an Anchor-based Solana program, an event-indexing Go backend, and a React frontend — all running together via Docker Compose.
 
-## Overview
-
-The 57B Veterinary offers medical services for the pets in their community, they take register of each pets the take care in the clinic including basic information like name, age, type of animal, and caretaker's information. Additionally, they need to have registers on each medical appointment the create for a pet where they are able to include the reason for the appointment, date, and billing information.
-
-In the last period, they perceived an increase on the flow of clients into the veterinary. 
+Built as part of the 57Blocks Web3 development training program.
 
 ---
 
-## 🎯 Exercise Goal
+## Architecture Overview
 
-Build a complete system to administrate pets in the 57B veterinary clinic, managing their basic information, medical appointments, and enabling payments using cryptocurrencies.
+```
+                    ┌───────────────────┐
+                    │   React Frontend   │
+                    │  (Vite + Anchor)   │
+                    └────────┬──────────┘
+                             │
+              ┌──────────────┼──────────────┐
+              │              │              │
+              ▼              ▼              ▼
+     ┌──────────────┐ ┌──────────┐ ┌──────────────┐
+     │  Solana RPC  │ │Backend   │ │  Wallet      │
+     │  (validator) │ │REST API  │ │  Adapter     │
+     └──────┬───────┘ └────┬─────┘ └──────────────┘
+            │              │
+            ▼              ▼
+     ┌──────────────┐ ┌──────────┐
+     │  Solana      │ │PostgreSQL│
+     │  Program     │ │    16    │
+     │  (Anchor)    │ └──────────┘
+     └──────────────┘
+```
+
+## Components
+
+### 1. Solana Program (Rust / Anchor v0.32)
+
+Anchor program managing three account types with PDA-based derivation:
+
+| Account | Seeds | Instructions |
+|---------|-------|-------------|
+| `MedicalRecord` | `["medical-record", <id>]` | `registerPet` |
+| `MedicalAppointment` | `["medical-appointment", <id>]` | `scheduleMedicalAppointment`, `payMedicalAppointment` |
+| `PetCheckin` | `["pet-checkin", <medical_record>, <id>]` | `takePetToVet` |
+
+- **Events**: `MedicalRecordCreated`, `MedicalAppointmentCreated` — emitted for off-chain consumption
+- **Payments**: Supports partial and full payment, rejects overpayment via `PaymentExceedsCost` error
+- **Check-ins**: On-chain timestamped arrival records for pets
+- **Deployed**: localnet & devnet at `6uka17bBE74Sf5s9AMqQvPRMsk3ujb8JhaUpMHYpg5mv`
+
+### 2. TypeScript Client (`@coral-xyz/anchor`)
+
+Typed `VetProgram` wrapper in `solana/app/vet.program.ts` — provides typed helper methods with automatic PDA derivation for all 4 instructions.
+
+### 3. Backend Service (Go)
+
+A Go 1.26 service bridging on-chain data with traditional REST:
+
+- **Event Listener**: Subscribes to Solana program events via WebSocket + polling, persists to PostgreSQL 16
+- **REST API** (chi router): Pets CRUD, appointments, check-ins, health check
+- **PostgreSQL 16**: Migrations for event store and query models
+- **Production-ready**: Multi-stage Docker build, non-root user, health check
+
+### 4. Frontend (React 19 + Vite 7 + TypeScript)
+
+Modern React SPA with wallet-connected experiences:
+
+- **Wallet connection**: `@solana/wallet-adapter-react` + wallet-standard
+- **Feature modules**: `pets/`, `appointments/`, `common/` (atomic-design-aligned)
+- **Direct on-chain reads**: `program.account.<type>.all()`
+- **Backend HTTP**: Axios for REST API calls
+- **Routing**: react-router-dom v7 with nested layouts
+- **Styling**: Plain CSS (no Tailwind, no CSS-in-JS)
+
+### 5. DevOps
+
+- **Docker Compose**: Spins up Solana dev validator + PostgreSQL 16 + Go backend
+- **Solana dev container**: Pre-built with Rust, Anchor CLI, Solana CLI 1.18.26
+- **SDD workflow**: Spec-Driven Development with engram/openspec persistence
+- **CI-ready**: ESLint, Prettier, TypeScript strict mode, Vitest, Mocha/Chai tests
 
 ---
 
-## 📋 Developer Tasks
-
-### 1. Solana Program Development
-
-Create a Solana program that manages veterinary data with the following capabilities:
-
-#### Medical Records
-
-Manage pet information as "Medical Records" with the following data structure:
-
-| Field | Type | Description |
-|-------|------|-------------|
-| `id` | `string` | Unique identifier for the medical record |
-| `name` | `string` | Name of the pet |
-| `age` | `number` | Age of the pet |
-| `caretakerName` | `string` | Name of the pet's caretaker |
-| `caretakerPhone` | `string` | Phone number of the pet's caretaker |
-
-> 📄 TypeScript definition: [`solana/app/models/medical_record.model.ts`](./solana/app/models/medical_record.model.ts)
-
-#### Medical Appointments
-
-Create and manage medical appointments for pets with the following data structure:
-
-| Field | Type | Description |
-|-------|------|-------------|
-| `id` | `string` | Unique identifier for the appointment |
-| `petId` | `string` | Reference to the pet's medical record |
-| `date` | `Date` | Date of the appointment |
-| `time` | `string` | Time of the appointment |
-| `appointmentValue` | `number` | Total cost of the appointment (in dollar cents) |
-| `paidValue` | `number` | Amount already paid by the caretaker (in dollar cents) |
-
-> 📄 TypeScript definition: [`solana/app/models/medical_appointment.model.ts`](./solana/app/models/medical_appointment.model.ts)
-
----
-
-### 2. Backend Service (Data Consumption)
-
-Build a backend service that bridges on-chain data with traditional application architecture:
-
-#### Event Listening
-- Subscribe to Solana program events for:
-  - Pet/Medical Record creation
-  - Medical Appointment creation
-- Persist captured events into a database
-
-#### RESTful API
-Expose endpoints to read veterinary data from the database:
-- Retrieve all pets/medical records
-- Retrieve medical appointments
-- Query appointments by pet ID
-
----
-
-## 🗂️ Project Structure
+## Project Structure
 
 ```
 vet-57b/
-├── solana/                    # Solana program & client
-│   ├── programs/vet-57b/      # Anchor program (Rust)
-│   ├── app/                   # TypeScript client & models
-│   │   └── models/            # Data type definitions
-│   ├── tests/                 # Program test suite
-│   └── migrations/            # Deployment scripts
+├── solana/                        # Solana program & client
+│   ├── programs/vet-57b/          # Anchor program (Rust)
+│   │   └── src/lib.rs             # 4 instructions, 3 accounts, 2 events
+│   ├── app/                       # TypeScript client & models
+│   │   ├── vet.program.ts         # Typed VetProgram wrapper
+│   │   └── models/                # Account interfaces & PDA derivation
+│   ├── tests/                     # Mocha + Chai integration tests
+│   └── migrations/                # Deployment scripts
 │
-└── web-app/                   # Frontend application (React + Vite)
-    └── src/
-        ├── pets/              # Pets feature module
-        ├── common/            # Shared components
-        └── config/            # App configuration
+├── backend/                       # Go backend service
+│   ├── cmd/server/                # Entry point
+│   └── internal/
+│       ├── api/                   # REST handlers (pets, appointments, checkins)
+│       ├── listener/              # Solana event subscriber (WebSocket + poller)
+│       ├── db/                    # PostgreSQL connection & migrations
+│       ├── models/                # Domain models
+│       ├── config/                # Environment-based config
+│       └── solana/                # Solana RPC client wrapper
+│
+├── web-app/                       # Frontend application
+│   ├── src/
+│   │   ├── pets/                  # Pets feature module
+│   │   ├── appointments/          # Appointments feature module
+│   │   ├── common/                # Shared components & pages
+│   │   ├── solana/                # Wallet provider, hooks, PDA utils
+│   │   └── config/                # Axios setup
+│   └── ...
+│
+├── docker/                        # Dockerfiles
+│   └── solana-dev/Dockerfile      # Solana development environment
+│
+├── openspec/                      # SDD artifacts (Spec-Driven Development)
+│   ├── specs/                     # 11 domain specs
+│   └── changes/                   # Implemented changes (archived)
+│
+└── docker-compose.yml             # Solana validator + PostgreSQL + Backend
 ```
 
 ---
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 | Layer | Technology |
 |-------|------------|
 | Blockchain | Solana |
-| Smart Contract Framework | Anchor |
-| Program Language | Rust |
-| Client SDK | TypeScript |
-| Frontend | React + Vite |
+| Smart Contract Framework | Anchor v0.32 |
+| Program Language | Rust (nightly-2025-09-01) |
+| TypeScript SDK | @coral-xyz/anchor ^0.30.1 |
+| Backend | Go 1.26 (chi, pgx, solana-go) |
+| Database | PostgreSQL 16 |
+| Frontend | React 19 + Vite 7 + TypeScript strict |
+| Wallet | @solana/wallet-adapter-* |
+| Testing (Solana) | Mocha v9 + Chai v4 + ts-mocha |
+| Testing (Web) | Vitest v2 + Testing Library |
+| Containerization | Docker Compose |
 
 ---
 
-## 🚀 Getting Started
+## Getting Started
 
 ### Prerequisites
-- [Rust](https://www.rust-lang.org/tools/install)
-- [Solana CLI](https://docs.solana.com/cli/install-solana-cli-tools)
-- [Anchor](https://www.anchor-lang.com/docs/installation)
-- [Node.js](https://nodejs.org/) (v18+)
-- [Yarn](https://yarnpkg.com/)
 
-### Solana Program
+- [Docker](https://docs.docker.com/get-docker/) + Docker Compose
+- [Node.js](https://nodejs.org/) v18+ (for web-app local dev)
+- [Solana CLI](https://docs.solana.com/cli/install-solana-cli-tools) (optional, for local-only dev)
+
+### Full Stack with Docker
 
 ```bash
-# Navigate to solana directory
-cd solana
+# Build all services
+docker compose build
 
-# Install dependencies
-yarn install
+# Start PostgreSQL + Backend in background
+docker compose up -d db backend
 
-# Build the program
-anchor build
+# Run Solana tests in dev container
+docker compose run --rm dev anchor test
 
-# Run tests
-anchor test
+# Build the Solana program
+docker compose run --rm dev anchor build
 ```
 
-### Web Application
+### Frontend (local dev)
 
 ```bash
-# Navigate to web-app directory
 cd web-app
-
-# Install dependencies
 npm install
-
-# Start development server
 npm run dev
 ```
 
----
+### Solana Program (local dev without Docker)
 
-## 📝 Evaluation Criteria
-
-- **Account Management**: Proper creation and management of Solana accounts
-- **Data Serialization**: Correct handling of on-chain data structures
-- **Program Instructions**: Well-designed instruction handlers
-- **Testing**: Comprehensive test coverage for program functionality
-- **Event Emission**: Proper event emission for off-chain consumption
-- **API Design**: Clean and RESTful API implementation
-- **Code Quality**: Clean, readable, and well-documented code
+```bash
+cd solana
+yarn install
+anchor build
+anchor test
+```
 
 ---
 
-## 📚 Resources
+## API Endpoints
 
-- [Solana Documentation](https://docs.solana.com/)
-- [Anchor Framework](https://www.anchor-lang.com/)
-- [Solana Cookbook](https://solanacookbook.com/)
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/health` | Health check |
+| GET | `/api/pets` | List all pets |
+| GET | `/api/pets/:id` | Get pet by ID |
+| GET | `/api/appointments` | List all appointments |
+| GET | `/api/appointments/:id` | Get appointment by ID |
+| GET | `/api/appointments?petId=:id` | Query appointments by pet |
+| GET | `/api/checkins` | List all check-ins |
+| GET | `/api/checkins/:id` | Get check-in by ID |
 
 ---
 
-*This exercise is part of the 57Blocks Web3 development training program.*
-# repo
+## Design Principles
+
+- **Solana-first**: Program first, then client, then UI
+- **No optimistic updates**: On-chain state is always authoritative
+- **Typed end-to-end**: Rust structs → TypeScript interfaces → Go models
+- **Event-driven**: On-chain mutations emit events consumed by the backend indexer
+- **Spec-driven development**: Every change is proposed, spec'd, designed, tasked, applied, and verified
+
+---
+
+## License
+
+ISC
+
+---
+
+*Part of the 57Blocks Web3 development training program.*
