@@ -5,6 +5,7 @@ package db
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/57blocks/vet-57b-backend/internal/models"
 	"github.com/jackc/pgx/v5"
@@ -162,6 +163,71 @@ func (q *Queries) PetExists(ctx context.Context, id string) (bool, error) {
 		return false, fmt.Errorf("pet exists: %w", err)
 	}
 	return exists, nil
+}
+
+// ---------------------------------------------------------------------------
+// Upsert methods (used by the event indexer)
+// ---------------------------------------------------------------------------
+
+// UpsertPet inserts or updates a pet record. Uses ON CONFLICT (id) DO UPDATE
+// for idempotent upsert. CreatedAt is left at the DB DEFAULT (NOW()).
+func (q *Queries) UpsertPet(ctx context.Context, id, name, animalType, caretakerName, caretakerPhone string, age uint8) error {
+	_, err := q.pool.Exec(ctx, `
+		INSERT INTO pets (id, name, age, animal_type, caretaker_name, caretaker_phone)
+		VALUES ($1, $2, $3, $4, $5, $6)
+		ON CONFLICT (id) DO UPDATE SET
+			name = EXCLUDED.name,
+			age = EXCLUDED.age,
+			animal_type = EXCLUDED.animal_type,
+			caretaker_name = EXCLUDED.caretaker_name,
+			caretaker_phone = EXCLUDED.caretaker_phone
+	`, id, name, age, animalType, caretakerName, caretakerPhone)
+	if err != nil {
+		return fmt.Errorf("upsert pet: %w", err)
+	}
+	return nil
+}
+
+// UpsertAppointment inserts or updates an appointment record.
+func (q *Queries) UpsertAppointment(
+	ctx context.Context,
+	id, petID, timeStr string,
+	date time.Time,
+	appointmentValue, paidValue uint64,
+) error {
+	_, err := q.pool.Exec(ctx, `
+		INSERT INTO appointments (id, pet_id, date, time, appointment_value, paid_value)
+		VALUES ($1, $2, $3, $4, $5, $6)
+		ON CONFLICT (id) DO UPDATE SET
+			pet_id = EXCLUDED.pet_id,
+			date = EXCLUDED.date,
+			time = EXCLUDED.time,
+			appointment_value = EXCLUDED.appointment_value,
+			paid_value = EXCLUDED.paid_value
+	`, id, petID, date, timeStr, appointmentValue, paidValue)
+	if err != nil {
+		return fmt.Errorf("upsert appointment: %w", err)
+	}
+	return nil
+}
+
+// UpsertCheckin inserts or updates a checkin record.
+func (q *Queries) UpsertCheckin(
+	ctx context.Context,
+	id, petID string,
+	checkinTime time.Time,
+) error {
+	_, err := q.pool.Exec(ctx, `
+		INSERT INTO checkins (id, pet_id, checkin_time)
+		VALUES ($1, $2, $3)
+		ON CONFLICT (id) DO UPDATE SET
+			pet_id = EXCLUDED.pet_id,
+			checkin_time = EXCLUDED.checkin_time
+	`, id, petID, checkinTime)
+	if err != nil {
+		return fmt.Errorf("upsert checkin: %w", err)
+	}
+	return nil
 }
 
 
