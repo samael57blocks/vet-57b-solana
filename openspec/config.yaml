@@ -1,0 +1,88 @@
+# openspec/config.yaml
+# SDD Configuration — vet-57b (Solana dApp)
+# Generated: 2026-05-28
+schema: spec-driven
+
+context: |
+  Tech stack:
+    - Solana blockchain (Anchor v0.32 Rust framework)
+    - TypeScript client (@coral-xyz/anchor ^0.30.1)
+    - React 19 + Vite 7 + TypeScript (strict mode) frontend
+    - CSS styling (no Tailwind, no CSS-in-JS)
+    - axios ^1.13.2, react-router-dom ^7.11.0
+    - Docker Compose dev environment (Solana CLI 1.18.26, Anchor 0.32.1)
+
+  Architecture:
+    - Solana program (Rust) in solana/programs/vet-57b/
+    - Typed TS client wrapper (VetProgram) in solana/app/
+    - Feature-module frontend (pets/, appointments/, common/)
+    - Wallet adapter integration via @solana/wallet-adapter-*
+    - On-chain reads via program.account; writes via program.methods
+    - No optimistic updates — Solana account state is authoritative
+
+  Testing:
+    - Solana: Mocha v9 + Chai v4 + ts-mocha (integration tests against solana-test-validator)
+    - Web-app: Vitest v2 + @testing-library/react v16 + jsdom
+    - Coverage: NOT configured (none for Solana or web-app)
+    - Solana lint: prettier ^2.6.2, rustfmt + clippy (via toolchain nightly-2025-09-01)
+    - Web-app lint: ESLint v9 + typescript-eslint + react-hooks + react-refresh
+    - Web-app format: none explicitly configured
+
+  Style:
+    - TypeScript strict mode, noUnusedLocals, noUnusedParameters
+    - No `any` — use `unknown` with type guards
+    - Anchor typed Program<Vet57b> — never cast raw accounts
+    - BN types for u64/i64 fields
+    - Transaction states: Idle → Pending → Confirmed → Success/Error
+
+rules:
+  proposal:
+    - Reference existing openspec/specs/{domain}/spec.md as baseline
+    - State what changes relative to main specs
+    - Include rollback plan for risky changes
+  specs:
+    - Use Given/When/Then for every scenario
+    - Use RFC 2119 keywords (MUST, SHALL, SHOULD, MAY)
+    - Cross-reference Solana program instructions by Rust fn name
+  design:
+    - Include PDA seed derivation for every new account
+    - Document account space calculations (8 discriminator + fields)
+    - Note event emissions for every state mutation
+  tasks:
+    - Group by phase: Program → Client → UI
+    - Keep tasks completable in one session
+    - Prepend Solana tasks with [anchor] label
+  apply:
+    - Follow existing code patterns (see AGENTS.md)
+    - Solana-first: program → client → UI
+    - Validate Anchor v0.32 syntax; no deprecated patterns
+    tdd: true
+    test_command_solana: "yarn run ts-mocha -p ./tsconfig.json -t 1000000 'tests/**/*.ts'"
+    test_command_webapp: "npm run test"
+  verify:
+    test_command_solana: "yarn run ts-mocha -p ./tsconfig.json -t 1000000 'tests/**/*.ts'"
+    test_command_webapp: "npm run test"
+    build_command_solana: "anchor build"
+    build_command_webapp: "npm run build"
+    coverage_threshold: 0
+  archive:
+    - Warn before merging destructive deltas into main specs
+    - Preserve all archived change folders as audit trail
+
+testing:
+  strict_tdd: true
+  runners:
+    - name: Solana (Mocha + Chai + ts-mocha)
+      command: "cd solana && yarn run ts-mocha -p ./tsconfig.json -t 1000000 'tests/**/*.ts'"
+      framework: mocha
+      layers: [integration]
+    - name: Web-app (Vitest + Testing Library)
+      command: "cd web-app && npm run test"
+      framework: vitest
+      layers: [unit, integration]
+  coverage: false
+  quality:
+    linter_solana: "cd solana && yarn lint"
+    linter_webapp: "cd web-app && npm run lint"
+    type_checker_webapp: "cd web-app && npx tsc -b"
+    formatter_solana: "cd solana && yarn lint:fix"
