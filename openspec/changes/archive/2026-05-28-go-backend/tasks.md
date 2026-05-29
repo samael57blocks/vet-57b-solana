@@ -37,25 +37,25 @@ Chain strategy: feature-branch-chain (PR 1 targets feature/tracker branch)
 
 ## Phase 2: REST API
 
-- [ ] 2.1 Create `internal/api/router.go` — chi router, `GET /health`, JSON middleware
-- [ ] 2.2 Create `internal/api/pets.go` — list + get by ID
-- [ ] 2.3 Create `internal/api/appointments.go` — list (with `?petId=` filter) + get by ID
-- [ ] 2.4 Create `internal/api/checkins.go` — `GET /api/v1/pets/:id/checkins`
-- [ ] 2.5 Table-driven handler tests for all 6 endpoints via `httptest` + mocked DB
+- [x] 2.1 Create `internal/api/router.go` — chi router, `GET /health`, JSON middleware
+- [x] 2.2 Create `internal/api/pets.go` — list + get by ID
+- [x] 2.3 Create `internal/api/appointments.go` — list (with `?petId=` filter) + get by ID
+- [x] 2.4 Create `internal/api/checkins.go` — `GET /api/v1/pets/:id/checkins`
+- [x] 2.5 Table-driven handler tests for all 6 endpoints via `httptest` + mocked DB
 
 ## Phase 3: Event Indexer
 
-- [ ] 3.1 Create `internal/solana/client.go` — SolanaClient interface + mock
-- [ ] 3.2 Create `internal/listener/websocket.go` — WS subscription, log parsing for both events, exponential backoff reconnect
-- [ ] 3.3 Create `internal/listener/poller.go` — periodic GetProgramAccounts with DataSize filter
-- [ ] 3.4 Create `internal/listener/listener.go` — orchestrator for WS + poller goroutines, graceful shutdown
-- [ ] 3.5 Unit tests: event parsing from known log strings
-- [ ] 3.6 Unit tests: account deserialization from known borsh bytes
-- [ ] 3.7 Unit tests: WS reconnect backoff (1s→2s→...→60s with jitter)
+- [x] 3.1 Create `internal/solana/client.go` — SolanaClient interface + mock
+- [x] 3.2 Create `internal/listener/websocket.go` — WS subscription, log parsing for both events, exponential backoff reconnect
+- [x] 3.3 Create `internal/listener/poller.go` — periodic GetProgramAccounts with DataSize filter
+- [x] 3.4 Create `internal/listener/listener.go` — orchestrator for WS + poller goroutines, graceful shutdown
+- [x] 3.5 Unit tests: event parsing from known log strings
+- [x] 3.6 Unit tests: account deserialization from known borsh bytes
+- [x] 3.7 Unit tests: WS reconnect backoff (1s→2s→...→60s with jitter)
 
 ## Phase 4: Wiring & Deployment
 
-- [ ] 4.1 Create `backend/cmd/server/main.go` — config init, wiring, SIGTERM/SIGINT handling
-- [ ] 4.2 Modify `docker-compose.yml` — add backend + PostgreSQL services with volume + healthcheck
-- [ ] 4.3 Run `go mod tidy` to lock `go.sum`
-- [ ] 4.4 DB integration tests: migration idempotency, upsert, FK violations
+- [x] 4.1 Create `backend/cmd/server/main.go` — config init, wiring, SIGTERM/SIGINT handling
+- [x] 4.2 Modify `docker-compose.yml` — add backend + PostgreSQL services with volume + healthcheck
+- [x] 4.3 Run `go mod tidy` to lock `go.sum`
+- [x] 4.4 DB integration tests: migration idempotency, upsert, FK violations

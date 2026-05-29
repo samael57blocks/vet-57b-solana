@@ -18,6 +18,9 @@
 # =============================================================================
 
 services:
+  # ---------------------------------------------------------------------------
+  # Solana development container (validator + Anchor CLI)
+  # ---------------------------------------------------------------------------
   dev:
     build:
       context: .
@@ -40,6 +43,59 @@ services:
       - ANCHOR_WALLET=/root/.config/solana/id.json
       - RUST_BACKTRACE=1
 
+  # ---------------------------------------------------------------------------
+  # PostgreSQL 16 database for the backend service
+  # ---------------------------------------------------------------------------
+  db:
+    image: postgres:16-alpine
+    container_name: vet-57b-db
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: vet57b
+      POSTGRES_PASSWORD: vet57b
+      POSTGRES_DB: vet57b
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U vet57b"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # ---------------------------------------------------------------------------
+  # Go backend service (REST API + Solana event indexer)
+  # ---------------------------------------------------------------------------
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: vet-57b-backend
+    restart: unless-stopped
+    ports:
+      - "4000:4000"
+    environment:
+      # Solana endpoint: points to the dev container's RPC and WS ports.
+      SOLANA_RPC_URL: http://dev:8899
+      SOLANA_WS_URL: ws://dev:8900
+      # Anchor program ID — must be set or provided via .env.
+      PROGRAM_ID: ${PROGRAM_ID:-}
+      # PostgreSQL connection string — points to the db service.
+      DATABASE_URL: postgres://vet57b:vet57b@db:5432/vet57b?sslmode=disable
+      # HTTP server listen address.
+      LISTEN_ADDR: :4000
+      # Account polling interval.
+      POLL_INTERVAL: 30s
+      # Max WebSocket reconnection backoff.
+      WS_MAX_BACKOFF: 60s
+      # Path to the migrations directory inside the container.
+      BACKEND_MIGRATIONS_DIR: internal/db/migrations
+    depends_on:
+      db:
+        condition: service_healthy
+
 volumes:
   cargo-cache:
   solana-config:
+  pgdata:
