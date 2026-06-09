@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import type { Pet } from '../../pets/types/pet';
 import type { TxState } from '../../common/hooks/useTxState';
+import { getExplorerTxUrl } from '../../common/solanaExplorer';
 
 /**
  * Form data for scheduling a new appointment.
@@ -126,7 +127,7 @@ export function ScheduleAppointmentForm({
                 <p className="tx-signature">
                     Transaction:{' '}
                     <a
-                        href={`https://explorer.solana.com/tx/${txState.signature}?cluster=devnet`}
+                        href={getExplorerTxUrl(txState.signature!)}
                         target="_blank"
                         rel="noopener noreferrer"
                     >

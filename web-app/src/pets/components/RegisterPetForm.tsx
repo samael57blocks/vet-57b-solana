@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import type { AnimalType } from '../types/pet';
 import type { TxState } from '../../common/hooks/useTxState';
+import { getExplorerTxUrl } from '../../common/solanaExplorer';
 
 /**
  * Form data for registering a new pet.
@@ -125,7 +126,7 @@ export function RegisterPetForm({
         <p className="tx-signature">
           Transaction:{' '}
           <a
-            href={`https://explorer.solana.com/tx/${txState.signature}?cluster=devnet`}
+            href={getExplorerTxUrl(txState.signature!)}
             target="_blank"
             rel="noopener noreferrer"
           >

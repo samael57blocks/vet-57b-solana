@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import type { TxState } from '../../common/hooks/useTxState';
+import { getExplorerTxUrl } from '../../common/solanaExplorer';
 
 /**
  * Props for the PayAppointmentButton component.
@@ -73,7 +74,7 @@ export function PayAppointmentButton({
                 <p>Payment Successful!</p>
                 <p className="tx-signature">
                     <a
-                        href={`https://explorer.solana.com/tx/${txState.signature}?cluster=devnet`}
+                        href={getExplorerTxUrl(txState.signature!)}
                         target="_blank"
                         rel="noopener noreferrer"
                     >
