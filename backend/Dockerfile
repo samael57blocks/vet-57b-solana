@@ -1,6 +1,6 @@
 # Multi-stage Docker build for vet-57b backend service.
 #
-# Build stage: golang:1.23-alpine compiles the binary.
+# Build stage: golang:1.26-alpine compiles the binary.
 # Runtime stage: alpine:3.20 provides a minimal execution environment.
 #
 # Design decisions:
@@ -12,7 +12,7 @@
 # -----------------------
 # Stage 1: Build
 # -----------------------
-FROM golang:1.23-alpine AS build
+FROM golang:1.26-alpine AS build
 
 RUN apk add --no-cache gcc musl-dev
 
