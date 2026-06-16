@@ -6,9 +6,12 @@ declare_id!("6uka17bBE74Sf5s9AMqQvPRMsk3ujb8JhaUpMHYpg5mv");
 // Constants: pre-calculated account space
 // ---------------------------------------------------------------------------
 
-/// Space for MedicalRecord: 8 discriminator + 32 id + (4+50) name + 1 age
-/// + 1 animal_type + (4+50) caretaker_name + (4+20) caretaker_phone + 1 bump
-const MEDICAL_RECORD_SPACE: usize = 8 + 32 + (4 + 50) + 1 + 1 + (4 + 50) + (4 + 20) + 1;
+/// Space for OwnerProfile: 8 discriminator + 32 owner + (4+64) name + 1 bump
+const OWNER_PROFILE_SPACE: usize = 8 + 32 + (4 + 64) + 1;
+
+/// Space for MedicalRecord: 8 discriminator + 32 id + 32 owner + (4+50) name
+/// + 1 age + 1 animal_type + (4+50) caretaker_name + (4+20) caretaker_phone + 1 bump
+const MEDICAL_RECORD_SPACE: usize = 8 + 32 + 32 + (4 + 50) + 1 + 1 + (4 + 50) + (4 + 20) + 1;
 
 /// Space for MedicalAppointment: 8 discriminator + 32 id + 32 medical_record
 /// + 8 date + (4+10) time + 8 appointment_value + 8 paid_value + 1 bump
@@ -36,6 +39,8 @@ pub enum AnimalType {
 pub enum Vet57bError {
     #[msg("The payment amount exceeds the appointment cost")]
     PaymentExceedsCost,
+    #[msg("The caller is not the pet owner")]
+    NotPetOwner,
 }
 
 // ---------------------------------------------------------------------------
@@ -43,8 +48,16 @@ pub enum Vet57bError {
 // ---------------------------------------------------------------------------
 
 #[account]
+pub struct OwnerProfile {
+    pub owner: Pubkey,
+    pub name: String, // max 64 chars
+    pub bump: u8,
+}
+
+#[account]
 pub struct MedicalRecord {
     pub id: Pubkey,
+    pub owner: Pubkey,
     pub name: String,
     pub age: u8,
     pub animal_type: AnimalType,
@@ -77,8 +90,14 @@ pub struct PetCheckin {
 // ---------------------------------------------------------------------------
 
 #[derive(AnchorSerialize, AnchorDeserialize)]
+pub struct RegisterOwnerInput {
+    pub name: String, // max 64 chars
+}
+
+#[derive(AnchorSerialize, AnchorDeserialize)]
 pub struct RegisterPetInput {
     pub id: Pubkey,
+    pub owner: Pubkey,
     pub name: String,
     pub age: u8,
     pub animal_type: AnimalType,
@@ -109,8 +128,15 @@ pub struct TakePetToVetInput {
 // ---------------------------------------------------------------------------
 
 #[event]
+pub struct OwnerProfileCreated {
+    pub owner: Pubkey,
+    pub name: String,
+}
+
+#[event]
 pub struct MedicalRecordCreated {
     pub id: Pubkey,
+    pub owner: Pubkey,
     pub name: String,
     pub age: u8,
     pub animal_type: AnimalType,
@@ -131,6 +157,26 @@ pub struct MedicalAppointmentCreated {
 // ---------------------------------------------------------------------------
 // Account validation structs
 // ---------------------------------------------------------------------------
+
+#[derive(Accounts)]
+pub struct RegisterOwnerAccounts<'info> {
+    /// The new owner profile PDA: seeds [b"owner-profile", owner.key]
+    #[account(
+        init,
+        seeds = [b"owner-profile", owner.key().as_ref()],
+        bump,
+        payer = owner,
+        space = OWNER_PROFILE_SPACE,
+    )]
+    pub owner_profile: Account<'info, OwnerProfile>,
+
+    /// The wallet being registered as an owner.
+    #[account(mut)]
+    pub owner: Signer<'info>,
+
+    /// The Solana system program.
+    pub system_program: Program<'info, System>,
+}
 
 #[derive(Accounts)]
 #[instruction(input: RegisterPetInput)]
@@ -194,6 +240,14 @@ pub struct PayMedicalAppointmentAccounts<'info> {
     )]
     pub medical_appointment: Account<'info, MedicalAppointment>,
 
+    /// The pet's medical record.
+    /// Verified by seeds [b"medical-record", medical_record.id].
+    #[account(
+        seeds = [b"medical-record", medical_record.id.as_ref()],
+        bump = medical_record.bump,
+    )]
+    pub medical_record: Account<'info, MedicalRecord>,
+
     /// The transaction signer.
     #[account(mut)]
     pub authority: Signer<'info>,
@@ -236,6 +290,24 @@ pub struct TakePetToVetAccounts<'info> {
 pub mod vet_57b {
     use super::*;
 
+    /// Register a wallet as a pet owner, creating an OwnerProfile PDA.
+    pub fn register_owner(
+        ctx: Context<RegisterOwnerAccounts>,
+        input: RegisterOwnerInput,
+    ) -> Result<()> {
+        let owner_profile = &mut ctx.accounts.owner_profile;
+        owner_profile.owner = ctx.accounts.owner.key();
+        owner_profile.name = input.name.clone();
+        owner_profile.bump = ctx.bumps.owner_profile;
+
+        emit!(OwnerProfileCreated {
+            owner: ctx.accounts.owner.key(),
+            name: input.name,
+        });
+
+        Ok(())
+    }
+
     /// Register a new pet, creating an on-chain MedicalRecord PDA.
     pub fn register_pet(
         ctx: Context<RegisterPetAccounts>,
@@ -243,6 +315,7 @@ pub mod vet_57b {
     ) -> Result<()> {
         let medical_record = &mut ctx.accounts.medical_record;
         medical_record.id = input.id;
+        medical_record.owner = input.owner;
         medical_record.name = input.name.clone();
         medical_record.age = input.age;
         medical_record.animal_type = input.animal_type.clone();
@@ -252,6 +325,7 @@ pub mod vet_57b {
 
         emit!(MedicalRecordCreated {
             id: input.id,
+            owner: input.owner,
             name: input.name,
             age: input.age,
             animal_type: input.animal_type,
@@ -289,11 +363,17 @@ pub mod vet_57b {
     }
 
     /// Pay for a medical appointment. Supports partial and full payment.
-    /// Rejects overpayment via PaymentExceedsCost error.
+    /// Only the pet owner can pay. Rejects overpayment via PaymentExceedsCost error.
     pub fn pay_medical_appointment(
         ctx: Context<PayMedicalAppointmentAccounts>,
         input: PayAppointmentInput,
     ) -> Result<()> {
+        // Only the pet owner is authorised to pay
+        require!(
+            ctx.accounts.authority.key() == ctx.accounts.medical_record.owner,
+            Vet57bError::NotPetOwner
+        );
+
         let appointment = &mut ctx.accounts.medical_appointment;
 
         let remaining_cost = appointment

@@ -24,12 +24,16 @@ describe('Medical record', () => {
   });
 
   describe('New pet registration', () => {
-    it('Registers a new pet', async () => {
+    it('Registers a new pet with owner', async () => {
       // Create the information for the new medical record
       const newMedicalRecord = givenNewMedicalRecord();
+      const owner = testingContext.defaultSigner.publicKey;
 
-      // Invoke the instruction to register the new pet
-      const tx = await vetProgram.methods.registerPet(newMedicalRecord).accounts({
+      // Invoke the instruction to register the new pet with the owner
+      const tx = await (vetProgram.methods as any).registerPet({
+        ...newMedicalRecord,
+        owner,
+      }).accounts({
         medicalRecord: MedicalRecord.deriveAddress(newMedicalRecord.id, vetProgram.programId),
         authority: testingContext.defaultSigner.publicKey,
         systemProgram: SystemProgram.programId,
@@ -48,6 +52,8 @@ describe('Medical record', () => {
       expect(medicalRecord.name).equals(newMedicalRecord.name);
       expect(medicalRecord.age).equals(newMedicalRecord.age);
       expect(medicalRecord.animalType).to.deep.equal(newMedicalRecord.animalType);
+      // Assert the owner is stored correctly
+      expect(medicalRecord.owner.toBase58()).equals(owner.toBase58());
 
       // Get the event from the transaction
       const event = await testingContext.getEvent<MedicalRecordCreatedEvent>(tx);
@@ -55,6 +61,7 @@ describe('Medical record', () => {
       expect(event).not.to.be.null;
       // Assert that the event has the correct information
       expect(event.id.toBase58()).equals(newMedicalRecord.id.toBase58());
+      expect(event.owner.toBase58()).equals(owner.toBase58());
       expect(event.name).equals(newMedicalRecord.name);
       expect(event.age).equals(newMedicalRecord.age);
       expect(event.animalType).to.deep.equal(newMedicalRecord.animalType);
@@ -65,9 +72,13 @@ describe('Medical record', () => {
     it('Fails when the pet ID is already registered', async () => {
       // Create a new medical record
       const newMedicalRecord = givenNewMedicalRecord();
+      const owner = testingContext.defaultSigner.publicKey;
 
       // Register the pet for the first time
-      const tx = await vetProgram.methods.registerPet(newMedicalRecord).accounts({
+      const tx = await (vetProgram.methods as any).registerPet({
+        ...newMedicalRecord,
+        owner,
+      }).accounts({
         medicalRecord: MedicalRecord.deriveAddress(newMedicalRecord.id, vetProgram.programId),
         authority: testingContext.defaultSigner.publicKey,
         systemProgram: SystemProgram.programId,
@@ -76,7 +87,10 @@ describe('Medical record', () => {
 
       // Try to register the same pet again with the same ID
       try {
-        await vetProgram.methods.registerPet(newMedicalRecord).accounts({
+        await (vetProgram.methods as any).registerPet({
+          ...newMedicalRecord,
+          owner,
+        }).accounts({
           medicalRecord: MedicalRecord.deriveAddress(newMedicalRecord.id, vetProgram.programId),
           authority: testingContext.defaultSigner.publicKey,
           systemProgram: SystemProgram.programId,

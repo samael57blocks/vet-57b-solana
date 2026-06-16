@@ -28,17 +28,22 @@ describe('Pay appointment', () => {
     /**
      * Helper that registers a pet and schedules an appointment with the given value.
      * @param appointmentValue - The value of the appointment to schedule.
-     * @returns The appointment PDA address and appointment ID.
+     * @returns The appointment PDA address, medical record PDA address, and appointment ID.
      */
     async function setupAppointment(appointmentValue: BN): Promise<{
       appointmentAddress: PublicKey;
+      medicalRecordAddress: PublicKey;
       appointmentId: PublicKey;
     }> {
-      // Register a pet
+      // Register a pet with the default signer as the owner
       const newMedicalRecord = givenNewMedicalRecord();
       const medicalRecordAddress = MedicalRecord.deriveAddress(newMedicalRecord.id, vetProgram.programId);
+      const owner = testingContext.defaultSigner.publicKey;
 
-      const registerTx = await vetProgram.methods.registerPet(newMedicalRecord).accounts({
+      const registerTx = await (vetProgram.methods as any).registerPet({
+        ...newMedicalRecord,
+        owner,
+      }).accounts({
         medicalRecord: medicalRecordAddress,
         authority: testingContext.defaultSigner.publicKey,
         systemProgram: SystemProgram.programId,
@@ -63,19 +68,20 @@ describe('Pay appointment', () => {
       }).signers([testingContext.defaultSigner]).rpc();
       await testingContext.waitForTransactions(scheduleTx);
 
-      return { appointmentAddress, appointmentId: id };
+      return { appointmentAddress, medicalRecordAddress, appointmentId: id };
     }
 
     it('Pays the full appointment amount', async () => {
       // Setup: register a pet and schedule an appointment worth 1 SOL
       const appointmentValue = new BN(1_000_000_000);
-      const { appointmentAddress } = await setupAppointment(appointmentValue);
+      const { appointmentAddress, medicalRecordAddress } = await setupAppointment(appointmentValue);
 
       // Pay the full amount
-      const tx = await vetProgram.methods.payMedicalAppointment({
+      const tx = await (vetProgram.methods as any).payMedicalAppointment({
         amount: appointmentValue,
       }).accounts({
         medicalAppointment: appointmentAddress,
+        medicalRecord: medicalRecordAddress,
         authority: testingContext.defaultSigner.publicKey,
       }).signers([testingContext.defaultSigner]).rpc();
       await testingContext.waitForTransactions(tx);
@@ -89,13 +95,14 @@ describe('Pay appointment', () => {
       // Setup: register a pet and schedule an appointment worth 1 SOL
       const appointmentValue = new BN(1_000_000_000);
       const partialAmount = new BN(500_000_000);
-      const { appointmentAddress } = await setupAppointment(appointmentValue);
+      const { appointmentAddress, medicalRecordAddress } = await setupAppointment(appointmentValue);
 
       // Pay a partial amount
-      const tx = await vetProgram.methods.payMedicalAppointment({
+      const tx = await (vetProgram.methods as any).payMedicalAppointment({
         amount: partialAmount,
       }).accounts({
         medicalAppointment: appointmentAddress,
+        medicalRecord: medicalRecordAddress,
         authority: testingContext.defaultSigner.publicKey,
       }).signers([testingContext.defaultSigner]).rpc();
       await testingContext.waitForTransactions(tx);
@@ -109,19 +116,46 @@ describe('Pay appointment', () => {
       // Setup: register a pet and schedule an appointment worth 1 SOL
       const appointmentValue = new BN(1_000_000_000);
       const overpayment = new BN(2_000_000_000);
-      const { appointmentAddress } = await setupAppointment(appointmentValue);
+      const { appointmentAddress, medicalRecordAddress } = await setupAppointment(appointmentValue);
 
       // Try to pay more than the appointment value
       try {
-        await vetProgram.methods.payMedicalAppointment({
+        await (vetProgram.methods as any).payMedicalAppointment({
           amount: overpayment,
         }).accounts({
           medicalAppointment: appointmentAddress,
+          medicalRecord: medicalRecordAddress,
           authority: testingContext.defaultSigner.publicKey,
         }).signers([testingContext.defaultSigner]).rpc();
         expect.fail('Expected PaymentExceedsCost error');
       } catch (err) {
         expect(err).to.exist;
+      }
+    });
+
+    it('Rejects payment from a non-owner wallet', async () => {
+      // Setup: register a pet and schedule an appointment worth 1 SOL
+      const appointmentValue = new BN(1_000_000_000);
+      const { appointmentAddress, medicalRecordAddress } = await setupAppointment(appointmentValue);
+
+      // Create a different wallet that is NOT the owner
+      const otherWallet = TestingContext.newKeypair();
+      await testingContext.sendAirdrop([otherWallet]);
+
+      // Try to pay with the non-owner wallet
+      try {
+        await (vetProgram.methods as any).payMedicalAppointment({
+          amount: new BN(100_000_000),
+        }).accounts({
+          medicalAppointment: appointmentAddress,
+          medicalRecord: medicalRecordAddress,
+          authority: otherWallet.publicKey,
+        }).signers([otherWallet]).rpc();
+        expect.fail('Expected NotPetOwner error');
+      } catch (err) {
+        // Verify this is a real Anchor program error, not a false positive
+        // from expect.fail being caught by the catch block
+        expect((err as Error).message).not.to.contain('Expected NotPetOwner');
       }
     });
   });

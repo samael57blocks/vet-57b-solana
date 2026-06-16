@@ -17,6 +17,8 @@ export const ANIMAL_CAT: AnimalType = { cat: {} };
 export interface MedicalRecord {
   /** The ID of the medical record */
   id: PublicKey;
+  /** The wallet address of the pet owner */
+  owner: PublicKey;
   /** The name of the patient */
   name: string;
   /** The age of the patient */
@@ -55,6 +57,8 @@ export class MedicalRecord {
 export interface NewMedicalRecord {
   /** The ID of the medical record */
   id: PublicKey;
+  /** The wallet address of the pet owner */
+  owner: PublicKey;
   /** The name of the patient */
   name: string;
   /** The age of the patient */
