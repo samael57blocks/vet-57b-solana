@@ -8,6 +8,8 @@ import { AnimalType } from "../medical_record.model";
 export interface MedicalRecordCreatedEvent {
     /** The ID of the medical record */
     id: PublicKey;
+    /** The wallet address of the pet owner */
+    owner: PublicKey;
     /** The name of the patient */
     name: string;
     /** The age of the patient */
